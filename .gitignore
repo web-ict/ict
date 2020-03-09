@@ -1,0 +1,17 @@
+.DS_Store
+*/**/.DS_Store
+.idea
+*.iml
+.git
+.vscode
+.nyc_output
+*.log
+*.cache
+node_modules/
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+yarn.lock
+coverage

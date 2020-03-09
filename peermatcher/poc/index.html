@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            const log = message => {
+                const el = document.createElement('div')
+                el.innerHTML = message
+                document.getElementById('log').appendChild(el)
+            }
+            const logCount = (id, count) =>
+                (document.getElementById(id).innerHTML = count.toString())
+
+            const socket = new WebSocket('ws://localhost:3030')
+            socket.onerror = error => log('WebSocket error: ' + error)
+            socket.onclose = () => log('WebSocket closed.')
+
+            let idCounter = 0
+            const SignalingChannel = function() {
+                const id = idCounter++
+                let resolver
+                this.ready = new Promise(resolve => (resolver = resolve))
+
+                socket.onopen = () => {
+                    log('Websocket is open.')
+                    socket.send(JSON.stringify({ id }))
+                }
+                socket.onmessage = ({ data }) => {
+                    try {
+                        data = JSON.parse(data)
+                    } catch {
+                        return
+                    }
+
+                    console.log(data)
+
+                    if (data.id === undefined) {
+                        socket.close()
+                        return
+                    }
+
+                    if (id === data.id) {
+                        if (data.candidate || data.description) {
+                            this.onmessage({ data })
+                        } else if (data.caller !== undefined) {
+                            this.caller = data.caller
+                            resolver()
+                        }
+                    }
+                }
+
+                this.send = data => {
+                    this.ready.then(() =>
+                        socket.send(
+                            JSON.stringify({
+                                id,
+                                candidate: data.candidate,
+                                description: data.description,
+                            })
+                        )
+                    )
+                }
+
+                return this
+            }
+
+            const signaling = new SignalingChannel()
+            const peerConnectionConfiguration = {
+                iceServers: [
+                    {
+                        urls: ['stun:stun3.l.google.com:19302'],
+                    },
+                ],
+            }
+            let pc
+            let dataChannel
+
+            const createDataChannel = dt => {
+                if (!dt) {
+                    dt = pc.createDataChannel('neighbor', {
+                        // udp semantics
+                        ordered: false,
+                        maxRetransmits: 0,
+                    })
+                }
+
+                let dataChannelInterval
+                let sentCounter = 0
+                let receivedCounter = 0
+
+                dataChannel = dt
+
+                dataChannel.onopen = () => {
+                    log('Data channel is open.')
+                    dataChannelInterval = setInterval(function() {
+                        dataChannel.send('ping')
+                        logCount('sent', ++sentCounter)
+                    }, 10)
+                }
+                dataChannel.onclose = () => {
+                    log('Data channel closed.')
+                    clearInterval(dataChannelInterval)
+                }
+                dataChannel.onmessage = () => {
+                    logCount('received', ++receivedCounter)
+                }
+            }
+
+            const createPeerConnection = () => {
+                pc = new RTCPeerConnection(peerConnectionConfiguration)
+                pc.ondatachannel = ({ channel }) => createDataChannel(channel)
+                pc.onicecandidate = ({ candidate }) =>
+                    !candidate || signaling.send({ candidate })
+                pc.onnegotiationneeded = () =>
+                    pc
+                        .createOffer()
+                        .then(offer => pc.setLocalDescription(offer))
+                        .then(() =>
+                            signaling.send({
+                                description: pc.localDescription,
+                            })
+                        )
+                        .catch(log)
+            }
+
+            signaling.onmessage = async ({
+                data: { description, candidate },
+            }) => {
+                if (!pc) {
+                    createPeerConnection()
+                }
+                if (description) {
+                    if (description.type === 'offer') {
+                        if (pc.signalingState != 'stable') {
+                            await Promise.all([
+                                pc.setLocalDescription({ type: 'rollback' }),
+                                pc.setRemoteDescription(
+                                    new RTCSessionDescription(description)
+                                ),
+                            ])
+                        } else {
+                            await pc.setRemoteDescription(
+                                new RTCSessionDescription(description)
+                            )
+                        }
+                        pc.createAnswer()
+                            .then(answer => pc.setLocalDescription(answer))
+                            .then(() =>
+                                signaling.send({
+                                    description: pc.localDescription,
+                                })
+                            )
+                            .catch(log)
+                    } else if (description.type === 'answer') {
+                        pc.setRemoteDescription(
+                            new RTCSessionDescription(description)
+                        ).catch(log)
+                    }
+                } else if (candidate) {
+                    pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(
+                        log
+                    )
+                }
+            }
+
+            signaling.ready.then(() => {
+                if (signaling.caller) {
+                    createPeerConnection()
+                    createDataChannel()
+                }
+            })
+        </script>
+    </head>
+    <body>
+        <div>Sent: <span id="sent">0</span></div>
+        <div>Received: <span id="received">0</span></div>
+        <div id="log"></div>
+    </body>
+</html>
