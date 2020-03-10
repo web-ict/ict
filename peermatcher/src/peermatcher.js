@@ -7,29 +7,49 @@ const peermatcher = module.exports
 
 peermatcher.server = function(options) {
     const server = new WebSocket.Server(options)
-    let heartbeatInterval
 
-    const match = (buffer => channel => {
-        if (buffer.length > 0) {
-            const peerChannel = buffer.pop()
-            if (!peerChannel.closed) {
+    const buffer = []
+    const match = channel => {
+        for (let i = 0; i < buffer.length; i++) {
+            const peerChannel = buffer[i]
+            if (peerChannel.closed) {
+                buffer.splice(i, 1)
+            } else if (
+                // Do not match channels originating from same node
+                // Match with each node once
+                !(
+                    channel.socket.channels.some(
+                        c => c.socket === peerChannel.socket
+                    ) ||
+                    channel.socket.peerSockets.some(
+                        s => s === peerChannel.socket
+                    )
+                )
+            ) {
+                // Caller issues SDP offer
                 channel.caller = true
+                // Callee answers SDP offer
+                peerChannel.caller = false
+                // Match channels originating from different nodes
                 channel.peerChannel = Promise.resolve(peerChannel)
                 peerChannel.resolvePeerChannel(channel)
+                channel.socket.peerSockets.push(peerChannel.socket)
+                peerChannel.socket.peerSockets.push(channel.socket)
+                buffer.splice(i, 1)
                 return
             }
         }
-        channel.caller = false
+
         channel.peerChannel = new Promise(
             resolve => (channel.resolvePeerChannel = resolve)
         )
         buffer.push(channel)
-    })([])
+    }
 
-    const forward = signal => peerChannel =>
-        peerChannel.socket.send(
+    const forward = signal => channel =>
+        channel.socket.send(
             JSON.stringify({
-                id: peerChannel.id,
+                id: channel.id,
                 candidate: signal.candidate,
                 description: signal.description,
             })
@@ -58,23 +78,18 @@ peermatcher.server = function(options) {
             return
         }
 
-        const { id } = signal
-
-        if (id === undefined) {
+        if (signal.id === undefined) {
             this.terminate()
             return
         }
 
-        heartbeat.call(this)
-
-        let channel = this.channels.get(id)
-
+        let channel = this.channels.find(c => c.id === signal.id)
         if (channel === undefined) {
             channel = {
-                id,
+                id: signal.id,
                 socket: this,
             }
-            this.channels.set(id, channel)
+            this.channels.push(channel)
             match(channel)
         }
 
@@ -97,10 +112,12 @@ peermatcher.server = function(options) {
     const onSocketClose = function() {
         this.channels.forEach(channel => {
             channel.closed = true
-            // channel.peerChannel.then(match)
+            // TODO: send signal to reset local state
+            channel.peerChannel.then(match)
         })
     }
 
+    let heartbeatInterval
     const onListening = () => {
         if (options.heartbeatIntervalDelay) {
             heartbeatInterval = setInterval(
@@ -111,7 +128,8 @@ peermatcher.server = function(options) {
     }
 
     const onConnection = socket => {
-        socket.channels = new Map()
+        socket.channels = []
+        socket.peerSockets = []
         socket.on('pong', heartbeat)
         socket.on('message', onMessage)
         socket.on('close', onSocketClose)

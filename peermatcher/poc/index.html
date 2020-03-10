@@ -8,30 +8,28 @@
                 document.getElementById('log').appendChild(el)
             }
             const logCount = (id, count) =>
-                (document.getElementById(id).innerHTML = count.toString())
+                (document.getElementById(id).innerText = count.toString())
 
             const socket = new WebSocket('ws://localhost:3030')
-            socket.onerror = error => log('WebSocket error: ' + error)
-            socket.onclose = () => log('WebSocket closed.')
+            socket.onopen = () => log('Websocket is open.')
+            socket.onerror = () => log('WebSocket error.')
+            socket.onclose = ({ code, reason }) =>
+                log(`WebSocket closed with error code ${code}.`)
 
             let idCounter = 0
             const SignalingChannel = function() {
                 const id = idCounter++
                 let resolver
-                this.ready = new Promise(resolve => (resolver = resolve))
 
-                socket.onopen = () => {
-                    log('Websocket is open.')
+                socket.addEventListener('open', () =>
                     socket.send(JSON.stringify({ id }))
-                }
-                socket.onmessage = ({ data }) => {
+                )
+                socket.addEventListener('message', ({ data }) => {
                     try {
                         data = JSON.parse(data)
                     } catch {
                         return
                     }
-
-                    console.log(data)
 
                     if (data.id === undefined) {
                         socket.close()
@@ -46,8 +44,9 @@
                             resolver()
                         }
                     }
-                }
+                })
 
+                this.ready = new Promise(resolve => (resolver = resolve))
                 this.send = data => {
                     this.ready.then(() =>
                         socket.send(
@@ -63,116 +62,198 @@
                 return this
             }
 
-            const signaling = new SignalingChannel()
-            const peerConnectionConfiguration = {
-                iceServers: [
-                    {
-                        urls: ['stun:stun3.l.google.com:19302'],
-                    },
-                ],
-            }
-            let pc
-            let dataChannel
-
-            const createDataChannel = dt => {
-                if (!dt) {
-                    dt = pc.createDataChannel('neighbor', {
-                        // udp semantics
-                        ordered: false,
-                        maxRetransmits: 0,
-                    })
-                }
-
-                let dataChannelInterval
+            const peer = (peerConnectionConfiguration, i) => {
+                const signaling = new SignalingChannel()
+                let peerConnection
+                let dataChannel
                 let sentCounter = 0
                 let receivedCounter = 0
 
-                dataChannel = dt
+                const createDataChannel = dataChannelFromEvent => {
+                    dataChannel =
+                        dataChannelFromEvent ||
+                        peerConnection.createDataChannel('neighbor', {
+                            // udp semantics
+                            ordered: false,
+                            maxRetransmits: 0,
+                        })
 
-                dataChannel.onopen = () => {
-                    log('Data channel is open.')
-                    dataChannelInterval = setInterval(function() {
-                        dataChannel.send('ping')
-                        logCount('sent', ++sentCounter)
-                    }, 10)
+                    let dataChannelInterval
+                    dataChannel.onopen = () => {
+                        log(`Data channel #${i} is open.`)
+                        dataChannelInterval = setInterval(function() {
+                            dataChannel.send('ping')
+                            logCount(`sent${i}`, ++sentCounter)
+                        }, 1)
+                    }
+                    dataChannel.onclose = () => {
+                        log(`Data channel #${i} closed.`)
+                        clearInterval(dataChannelInterval)
+                    }
+                    dataChannel.onmessage = () => {
+                        logCount(`received${i}`, ++receivedCounter)
+                    }
                 }
-                dataChannel.onclose = () => {
-                    log('Data channel closed.')
-                    clearInterval(dataChannelInterval)
-                }
-                dataChannel.onmessage = () => {
-                    logCount('received', ++receivedCounter)
-                }
-            }
 
-            const createPeerConnection = () => {
-                pc = new RTCPeerConnection(peerConnectionConfiguration)
-                pc.ondatachannel = ({ channel }) => createDataChannel(channel)
-                pc.onicecandidate = ({ candidate }) =>
-                    !candidate || signaling.send({ candidate })
-                pc.onnegotiationneeded = () =>
-                    pc
-                        .createOffer()
-                        .then(offer => pc.setLocalDescription(offer))
-                        .then(() =>
-                            signaling.send({
-                                description: pc.localDescription,
-                            })
-                        )
-                        .catch(log)
-            }
-
-            signaling.onmessage = async ({
-                data: { description, candidate },
-            }) => {
-                if (!pc) {
-                    createPeerConnection()
-                }
-                if (description) {
-                    if (description.type === 'offer') {
-                        if (pc.signalingState != 'stable') {
-                            await Promise.all([
-                                pc.setLocalDescription({ type: 'rollback' }),
-                                pc.setRemoteDescription(
-                                    new RTCSessionDescription(description)
-                                ),
-                            ])
-                        } else {
-                            await pc.setRemoteDescription(
-                                new RTCSessionDescription(description)
+                const createPeerConnection = () => {
+                    peerConnection = new RTCPeerConnection(
+                        peerConnectionConfiguration
+                    )
+                    peerConnection.ondatachannel = ({ channel }) =>
+                        createDataChannel(channel)
+                    peerConnection.onicecandidate = ({ candidate }) =>
+                        !candidate || signaling.send({ candidate })
+                    peerConnection.onnegotiationneeded = () =>
+                        peerConnection
+                            .createOffer()
+                            .then(offer =>
+                                peerConnection.setLocalDescription(offer)
                             )
-                        }
-                        pc.createAnswer()
-                            .then(answer => pc.setLocalDescription(answer))
                             .then(() =>
                                 signaling.send({
-                                    description: pc.localDescription,
+                                    description:
+                                        peerConnection.localDescription,
                                 })
                             )
                             .catch(log)
-                    } else if (description.type === 'answer') {
-                        pc.setRemoteDescription(
-                            new RTCSessionDescription(description)
-                        ).catch(log)
-                    }
-                } else if (candidate) {
-                    pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(
-                        log
-                    )
                 }
+
+                signaling.onmessage = ({
+                    data: { description, candidate },
+                }) => {
+                    if (!peerConnection) {
+                        createPeerConnection()
+                    }
+                    if (description) {
+                        if (description.type === 'offer') {
+                            ;(peerConnection.signalingState != 'stable'
+                                ? Promise.all([
+                                      peerConnection
+                                          .setLocalDescription({
+                                              type: 'rollback',
+                                          })
+                                          .catch(log),
+                                      peerConnection
+                                          .setRemoteDescription(
+                                              new RTCSessionDescription(
+                                                  description
+                                              )
+                                          )
+                                          .catch(log),
+                                  ])
+                                : peerConnection.setRemoteDescription(
+                                      new RTCSessionDescription(description)
+                                  )
+                            )
+                                .then(() =>
+                                    peerConnection
+                                        .createAnswer()
+                                        .then(answer =>
+                                            peerConnection.setLocalDescription(
+                                                answer
+                                            )
+                                        )
+                                        .then(() =>
+                                            signaling.send({
+                                                description:
+                                                    peerConnection.localDescription,
+                                            })
+                                        )
+                                )
+                                .catch(log)
+                        } else if (description.type === 'answer') {
+                            peerConnection
+                                .setRemoteDescription(
+                                    new RTCSessionDescription(description)
+                                )
+                                .catch(log)
+                        }
+                    } else if (candidate) {
+                        peerConnection
+                            .addIceCandidate(new RTCIceCandidate(candidate))
+                            .catch(log)
+                    }
+                }
+
+                signaling.ready.then(() => {
+                    if (signaling.caller) {
+                        createPeerConnection()
+                        createDataChannel()
+                    }
+                })
             }
 
-            signaling.ready.then(() => {
-                if (signaling.caller) {
-                    createPeerConnection()
-                    createDataChannel()
-                }
-            })
+            const numberOfPeers = 3
+            for (let i = 0; i < numberOfPeers; i++) {
+                peer(
+                    {
+                        iceServers: [
+                            {
+                                urls: ['stun:stun3.l.google.com:19302'],
+                            },
+                        ],
+                    },
+                    i
+                )
+            }
         </script>
     </head>
     <body>
-        <div>Sent: <span id="sent">0</span></div>
-        <div>Received: <span id="received">0</span></div>
-        <div id="log"></div>
+        <!-- Table credits: https://www.w3schools.com/html/html_tables.asp -->
+        <style>
+            body {
+                font-family: monospace;
+            }
+            table {
+                border-collapse: collapse;
+                width: 50%;
+            }
+            td,
+            th {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+            }
+            tr:nth-child(even) {
+                background-color: #dddddd;
+            }
+            #log div {
+                padding: 2px;
+            }
+        </style>
+        <div>
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 33%;" />
+                    <col span="1" style="width: 33%;" />
+                    <col span="1" style="width: 33%;" />
+                </colgroup>
+
+                <tr>
+                    <th>Channels</th>
+                    <th>Sent</th>
+                    <th>Received</th>
+                </tr>
+                <tr>
+                    <td>channel #0</td>
+                    <td id="sent0"></td>
+                    <td id="received0"></td>
+                </tr>
+                <tr>
+                    <td>channel #1</td>
+                    <td id="sent1"></td>
+                    <td id="received1"></td>
+                </tr>
+                <tr>
+                    <td>channel #2</td>
+                    <td id="sent2"></td>
+                    <td id="received2"></td>
+                </tr>
+            </table>
+
+            <br />
+            <h3>Log</h3>
+            <div id="log"></div>
+        </div>
     </body>
 </html>
