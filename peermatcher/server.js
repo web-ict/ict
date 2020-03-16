@@ -1,10 +1,11 @@
-const peermatcher = require('./src/peermatcher')
+const peermatcher = require('./')
 const util = require('util')
 const { version } = require('./package.json')
 
 const log = (message = '') => process.stdout.write(util.format(message) + '\n')
 const logError = message => process.stderr.write(util.format(message) + '\n')
 
+let totalConnections = 0
 const onListening = function() {
     const { address, port } = this.address()
     log(
@@ -13,7 +14,7 @@ const onListening = function() {
 }
 const onConnection = function() {
     const { address, port } = this.address()
-    log(`connection on ${address}:${port}`)
+    log(`connection #${++totalConnections} on ${address}:${port}`)
 }
 const onError = error => logError(`Server error: ${error.message}`)
 const onClose = () => log(`Peermatcher v${version} stopped listenning.`)
@@ -33,7 +34,7 @@ const onSigInt = () => {
 const server = peermatcher.server({
     host: 'localhost',
     port: 3030,
-    heartbeatIntervalDelay: 10 * 60 * 1000,
+    heartbeatIntervalDelay: 3 * 60 * 60 * 1000,
 })
 server.on('listening', onListening)
 server.on('connection', onConnection)

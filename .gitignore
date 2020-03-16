@@ -15,3 +15,4 @@ Thumbs.db
 *.sublime-workspace
 yarn.lock
 coverage
+dist

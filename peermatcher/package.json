@@ -2,7 +2,8 @@
     "name": "@tr1t0n/peermatcher",
     "version": "0.1.0",
     "description": "Peermatching and signaling for WebRTC-enabled Ict nodes.",
-    "main": "src/peermatcher.js",
+    "main": "index.js",
+    "browser": "browser.js",
     "scripts": {
         "start": "node server.js",
         "lint": "eslint ./",
