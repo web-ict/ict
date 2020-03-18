@@ -2,13 +2,13 @@
 
 const autopeering = (signaling, { iceServers, heartbeatIntervalDelay }) => {
     const discover = callback => {
-        let signalingChannel = signaling()
-        let responded
+        const signalingChannel = signaling()
+        const intervals = new Set()
         let replacementTimeout
+        let responded
 
         const heartbeat = () => (responded = true)
 
-        const intervals = new Set()
         const peer = {
             close() {
                 intervals.forEach(interval => clearInterval(interval))
@@ -25,7 +25,7 @@ const autopeering = (signaling, { iceServers, heartbeatIntervalDelay }) => {
                 }
             },
             replace() {
-                this.close()
+                peer.close()
                 replacementTimeout = setTimeout(() => discover(callback), 0)
             },
             setInterval(intervalFunction, delay) {
@@ -34,6 +34,7 @@ const autopeering = (signaling, { iceServers, heartbeatIntervalDelay }) => {
                 return interval
             },
             clearInterval(interval) {
+                clearInterval(interval)
                 intervals.delete(interval)
             },
         }
