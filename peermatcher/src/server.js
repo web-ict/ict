@@ -21,7 +21,6 @@ module.exports = ({ host, port, heartbeatIntervalDelay }) => {
                 channel.socket.channels.every(
                     hasDifferentSocketThan(peerChannel)
                 ) &&
-                // Match with each node once
                 channel.socket.peerChannels.every(
                     hasDifferentSocketThan(peerChannel)
                 )
