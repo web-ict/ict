@@ -32,7 +32,7 @@ const node = function({
     }
 
     const shutdown = () => {
-        peermatcherClient.disconnect(1001 /* Going away... */)
+        peermatcherClient.disconnect(3001 /* Going away... */)
         peers.forEach(peer => peer.close())
         peers.length = 0
     }
