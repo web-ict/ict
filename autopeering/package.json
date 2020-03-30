@@ -1,11 +1,12 @@
 {
-    "name": "@tr1t0n/peermatcher",
+    "name": "@tr1t0n/autopeering",
     "version": "0.1.0",
-    "description": "Peermatching and signaling for WebRTC-enabled Ict nodes.",
+    "description": "Autopeering of WebRTC-enabled Ict nodes.",
     "main": "index.js",
+    "type": "module",
     "browser": "browser.js",
     "scripts": {
-        "start": "node server.js",
+        "start": "node ./examples/server.js",
         "lint": "eslint ./",
         "test": "echo \"Error: no test specified\" && exit 1"
     },

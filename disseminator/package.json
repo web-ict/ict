@@ -1,0 +1,18 @@
+{
+    "name": "@tr1t0n/disseminator",
+    "version": "0.1.0",
+    "description": "",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "lint": "eslint ./",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Chris Dukakis",
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-prettier": "^6.10.1",
+        "eslint-plugin-prettier": "^3.1.2",
+        "prettier": "^2.0.2"
+    }
+}

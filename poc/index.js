@@ -1,6 +1,6 @@
 'use strict'
 
-const node = require('./node')
+import { node } from './node'
 
 const log = message => {
     const el = document.createElement('div')
@@ -12,50 +12,62 @@ const logCount = (id, count) =>
 
 const test = node({
     numberOfPeers: 3,
-    peermatcherConfiguration: {
-        url: 'ws://localhost:3030',
-        reconnectTimeoutDelay: 1000,
-    },
-    peerConnectionConfiguration: {
-        iceServers: [
-            {
-                urls: ['stun:stun3.l.google.com:19302'],
-            },
-        ],
-        heartbeatIntervalDelay: 3000,
-    },
+    signalingServers: [
+        'ws://localhost:3030',
+        'ws://localhost:3030',
+        'ws://localhost:3030',
+    ],
+    iceServers: [
+        {
+            urls: ['stun:stun3.l.google.com:19302'],
+        },
+    ],
+    heartbeatDelay: 10000,
+    A: 1,
+    B: 1000,
 })
 
-test.launch(socket => {
-    const onSocketOpen = () => log('Peermatcher socket is open.')
-    const onSocketClose = ({ code, reason }) =>
-        log(
-            `Peermatcher socket closed with error code ${code}.${
-                reason ? ` Reason: ${reason}` : ``
-            }`
-        )
-    socket.addEventListener('open', onSocketOpen)
-    socket.addEventListener('close', onSocketClose)
-
-    return (error, peer, i) => {
-        if (error) {
-            log(`Channel #${i} error: ${error.message}`)
-            return
-        }
-
-        let receivedCount = 0
-        let sentCount = 0
-        peer.dataChannel.onopen = () => {
-            log(`Data channel #${i} is open.`)
-            peer.setInterval(() => {
-                if (peer.dataChannel.readyState === 'open') {
-                    peer.dataChannel.send('ping')
-                }
-                logCount(`sent${i}`, ++sentCount)
-            }, 1)
-        }
-        peer.dataChannel.onmessage = () =>
-            logCount(`received${i}`, ++receivedCount)
-        peer.dataChannel.onclose = () => log(`Data channel #${i} is closed.`)
+const peers = []
+test.launch((error, peer, i) => {
+    if (error) {
+        log(`Channel #${i} error: ${error.message}`)
+        return
     }
+    peer.dataChannel.onopen = () => log(`Data channel #${i} is open.`)
+    peer.dataChannel.onclose = () => log(`Data channel #${i} is closed.`)
+    peers[i] = peer
 })
+
+const broadcastChannel = new BroadcastChannel('ict')
+let numberOfBroadcastChannelMessages = 0
+broadcastChannel.onmessage = () => numberOfBroadcastChannelMessages++
+
+let index = 0
+setInterval(() => {
+    for (let i = 0; i < 100; i++) {
+        test.broadcast(index++)
+    }
+}, 1000)
+
+const step = () => {
+    peers.forEach((peer, i) => {
+        if (peer) {
+            logCount(`received${i}`, peer.numberOfReceivedTransactions)
+            logCount(`sent${i}`, peer.numberOfSentTransactions)
+        } else {
+            logCount(`received${i}`, 0)
+            logCount(`sent${i}`, 0)
+        }
+    })
+    logCount('received-bc', numberOfBroadcastChannelMessages)
+    logCount('sent-bc', numberOfBroadcastChannelMessages)
+    const info = test.getNodeInfo()
+    logCount('number-of-seen-transactions', info.numberOfSeenTransactions)
+    logCount(
+        'number-of-enqueued-transactions',
+        info.numberOfEnqueuedTransactions
+    )
+    requestAnimationFrame(step)
+}
+
+requestAnimationFrame(step)

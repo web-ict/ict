@@ -1,9 +1,11 @@
-function SignalingChannel(socket, id) {
+'use strict'
+
+export function SignalingChannel(socket) {
     const onmessage = ({ data }) => {
         try {
             data = JSON.parse(data)
         } catch ({ message }) {
-            socket.close(3000, `Nonsesnse signal. ${message}`)
+            socket.close(3000, `Nonsense signal. ${message}`)
             return
         }
 
@@ -15,17 +17,13 @@ function SignalingChannel(socket, id) {
             !data.close
         ) {
             socket.close(3000, 'Nonsense signal.')
-        } else if (data.id === id) {
+        } else {
             this.onmessage({ data })
         }
     }
-    this.send = data => {
-        data.id = id
-        socket.send(JSON.stringify(data))
-    }
-    this.close = () => socket.removeEventListener('message', onmessage)
-    socket.addEventListener('message', onmessage)
-    socket.send(JSON.stringify({ id }))
-}
 
-module.exports = SignalingChannel
+    this.send = data => socket.send(JSON.stringify(data))
+    this.close = () => socket.removeEventListener('message', onmessage)
+
+    socket.addEventListener('message', onmessage)
+}

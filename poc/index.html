@@ -50,19 +50,45 @@
                     <th>Received</th>
                 </tr>
                 <tr>
-                    <td>channel #0</td>
+                    <td>DataChannel #0</td>
                     <td id="sent0"></td>
                     <td id="received0"></td>
                 </tr>
                 <tr>
-                    <td>channel #1</td>
+                    <td>DataChannel #1</td>
                     <td id="sent1"></td>
                     <td id="received1"></td>
                 </tr>
                 <tr>
-                    <td>channel #2</td>
+                    <td>DataChannel #2</td>
                     <td id="sent2"></td>
                     <td id="received2"></td>
+                </tr>
+                <tr>
+                    <td>BroadcastChannel</td>
+                    <td id="sent-bc"></td>
+                    <td id="received-bc"></td>
+                </tr>
+            </table>
+
+            <br />
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 50%;" />
+                    <col span="1" style="width: 50%;" />
+                </colgroup>
+                <tr>
+                    <th>Worker info</th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td>Number of seen txs</td>
+                    <td id="number-of-seen-transactions"></td>
+                </tr>
+
+                <tr>
+                    <td>Number of enqueued txs</td>
+                    <td id="number-of-enqueued-transactions"></td>
                 </tr>
             </table>
 

@@ -1,47 +1,85 @@
 'use strict'
 
-const peermatcher = require('../peermatcher')
-const autopeering = require('./autopeering')
+import { autopeering } from '../autopeering'
 
-const node = function({
+export const node = function({
     numberOfPeers,
-    peermatcherConfiguration,
-    peerConnectionConfiguration,
+    A,
+    B,
+    ...autopeeringProperties
 }) {
-    const peermatcherClient = peermatcher.client(peermatcherConfiguration)
     const peers = []
+    const info = {
+        numberOfSeenTransactions: 0,
+        numberOfEnqueuedTransactions: 0,
+    }
+    const discover = autopeering(autopeeringProperties)
+    let running = false
+    let worker
+
+    const onInboundMessage = ({ data }) =>
+        worker.postMessage({ command: 'transaction', index: data })
+
+    const onOutboundMessage = ({ data }) => {
+        if (data) {
+            if (data.type === 'info') {
+                info.numberOfSeenTransactions = data.numberOfSeenTransactions
+                info.numberOfEnqueuedTransactions =
+                    data.numberOfEnqueuedTransactions
+                return
+            }
+            peers.forEach(peer => {
+                if (peer.dataChannel.readyState === 'open') {
+                    peer.dataChannel.send(data)
+                    peer.numberOfSentTransactions++
+                }
+            })
+        }
+    }
 
     const launch = callback => {
-        peermatcherClient.connect(socket => {
-            const discover = autopeering(
-                peermatcherClient.signaling,
-                peerConnectionConfiguration
-            )
-            const peerCallback = callback(socket)
-            const peerConnection = i => (error, peer) => {
+        if (!running) {
+            running = true
+            worker = new Worker('./worker.js')
+            worker.postMessage({ command: 'init', A, B })
+            worker.addEventListener('message', onOutboundMessage)
+
+            const onPeer = i => (error, peer) => {
                 if (peer) {
+                    peer.numberOfSentTransactions = 0
+                    peer.numberOfReceivedTransactions = 0
+                    peer.dataChannel.addEventListener('message', data => {
+                        onInboundMessage(data)
+                        peer.numberOfReceivedTransactions++
+                    })
                     peers[i] = peer
                 }
-                return peerCallback(error, peer, i)
+                return callback(error, peer, i)
             }
 
             for (let i = 0; i < numberOfPeers; i++) {
-                discover(peerConnection(i))
+                discover(onPeer(i))
             }
-        })
+        }
     }
 
     const shutdown = () => {
-        peermatcherClient.disconnect(3001 /* Going away... */)
-        peers.forEach(peer => peer.close())
-        peers.length = 0
+        if (running) {
+            running = false
+            worker.terminate()
+            peers.forEach(peer => peer.close())
+            peers.length = 0
+        }
     }
+
+    const broadcast = index => onInboundMessage({ data: index })
+
+    const getNodeInfo = () => info
 
     return {
-        peermatcherClient,
         launch,
         shutdown,
+        broadcast,
+        getNodeInfo,
     }
 }
-
-module.exports = node
