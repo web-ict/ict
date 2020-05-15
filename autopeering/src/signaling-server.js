@@ -2,7 +2,7 @@
 
 import EventEmitter from 'events'
 import WebSocket from 'ws'
-import { delayQueue } from '../../disseminator/index.js'
+import { delayQueue } from '../../dissemination/src/delay-queue.js'
 
 export const signalingServer = ({
     host,

@@ -2,6 +2,7 @@
 
 export function SignalingChannel(socket) {
     const onmessage = ({ data }) => {
+        console.log(data)
         try {
             data = JSON.parse(data)
         } catch ({ message }) {

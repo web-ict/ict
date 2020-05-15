@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html>
+    <body>
+        <script src="./index.js"></script>
+
+        <!-- Table credits: https://www.w3schools.com/html/html_tables.asp -->
+        <style>
+            body {
+                font-family: monospace;
+                color: #ccc;
+                background: #000;
+                font-size: 11px;
+            }
+            h1 {
+                text-align: center;
+            }
+            table {
+                border-collapse: collapse;
+                width: 90%;
+                margin: auto;
+            }
+            td,
+            th {
+                font-weight: normal;
+                border: 3px solid #111;
+                text-align: left;
+                padding: 10px;
+            }
+            tr:nth-child(even) {
+                background-color: #111;
+            }
+            #log div {
+                width: 90%;
+                margin: auto;
+                padding: 2px;
+            }
+        </style>
+        <div>
+            <br />
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 12.5%;" />
+                </colgroup>
+
+                <tr>
+                    <th>Channels</th>
+                    <th>Inbound</th>
+                    <th>Outbound</th>
+                    <th>New</th>
+                    <th>Seen</th>
+                    <th>Rate of new txs</th>
+                    <th>Start time</th>
+                    <th>Uptime</th>
+                </tr>
+                <tr>
+                    <td>peer #0</td>
+                    <td id="number-of-inbound-transactions-0"></td>
+                    <td id="number-of-outbound-transactions-0"></td>
+                    <td id="number-of-new-transactions-0"></td>
+                    <td id="number-of-seen-transactions-0"></td>
+                    <td id="rate-of-new-transactions-0"></td>
+                    <td id="start-time-0"></td>
+                    <td id="uptime-0"></td>
+                </tr>
+                <tr>
+                    <td>peer #1</td>
+                    <td id="number-of-inbound-transactions-1"></td>
+                    <td id="number-of-outbound-transactions-1"></td>
+                    <td id="number-of-new-transactions-1"></td>
+                    <td id="number-of-seen-transactions-1"></td>
+                    <td id="rate-of-new-transactions-1"></td>
+                    <td id="start-time-1"></td>
+                    <td id="uptime-1"></td>
+                </tr>
+                <tr>
+                    <td>peer #2</td>
+                    <td id="number-of-inbound-transactions-2"></td>
+                    <td id="number-of-outbound-transactions-2"></td>
+                    <td id="number-of-new-transactions-2"></td>
+                    <td id="number-of-seen-transactions-2"></td>
+                    <td id="rate-of-new-transactions-2"></td>
+                    <td id="start-time-2"></td>
+                    <td id="uptime-2"></td>
+                </tr>
+            </table>
+
+            <br />
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 12.5%;" />
+                    <col span="1" style="width: 87.5%;" />
+                </colgroup>
+                <tr>
+                    <td>Inbound</td>
+                    <td id="number-of-inbound-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Outbound</td>
+                    <td id="number-of-outbound-transactions"></td>
+                </tr>
+                <tr>
+                    <td>New</td>
+                    <td id="number-of-new-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Seen</td>
+                    <td id="number-of-seen-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Invalid</td>
+                    <td id="number-of-invalid-transactions"></td>
+                </tr>
+
+                <tr>
+                    <td>To propagate</td>
+                    <td id="number-of-transactions-to-propagate"></td>
+                </tr>
+            </table>
+
+            <br />
+            <div id="log"></div>
+        </div>
+    </body>
+</html>

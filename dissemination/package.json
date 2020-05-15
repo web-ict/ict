@@ -1,7 +1,7 @@
 {
-    "name": "@tr1t0n/disseminator",
+    "name": "@tr1t0n/dissemination",
     "version": "0.1.0",
-    "description": "",
+    "description": "Message dissemination",
     "type": "module",
     "main": "index.js",
     "scripts": {

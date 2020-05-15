@@ -1,10 +1,9 @@
 {
-    "name": "@tr1t0n/peermatcher-poc",
+    "name": "@tr1t0n/test",
     "version": "0.1.0",
     "description": "Webpage to test autopeering on broswsers of different people",
     "scripts": {
-        "dev": "parcel index.html",
-        "build": "parcel build index.js",
+        "dev": "webpack-dev-server",
         "lint": "eslint ./"
     },
     "author": "Chris Dukakis <chrisdukakis@gmail.com>",
@@ -12,7 +11,10 @@
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.0",
         "eslint-plugin-prettier": "^3.1.2",
-        "parcel-bundler": "^1.12.4",
-        "prettier": "^1.19.1"
+        "prettier": "^1.19.1",
+        "webpack": "^4.25.1",
+        "webpack-cli": "^3.1.2",
+        "webpack-dev-server": "^3.1.10",
+        "worker-loader": "^2.0.0"
     }
 }

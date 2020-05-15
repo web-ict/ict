@@ -1,8 +1,8 @@
 'use strict'
 
 /**
- * @param {number} A >1ms
- * @param {number} B >=A
+ * @param {number} A >= 1
+ * @param {number} B >= A
  * @throws {RangeError}
  */
 export const delayQueue = (A, B) => {
@@ -15,8 +15,8 @@ export const delayQueue = (A, B) => {
 
     return {
         /**
-         * `callback` is set to execute after `T`ms delay.
-         * `T` is uniformly random value between `A` (inclusive) and `B` (inclusive).
+         * Schedules `callback` after a random delay of `t` milliseconds.
+         * `t` is uniformly random value between `A` (inclusive) and `B` (inclusive).
          * @param {function} callback
          * @returns {number} `timeoutID`
          */
@@ -27,8 +27,8 @@ export const delayQueue = (A, B) => {
             )
         },
         /**
-         * Cancels a callback by its `timeoutID`.
-         * @param {number} timeoutID
+         * Cancels callback by timeoutID
+         * @param {function} timeoutID
          */
         cancel(timeoutID) {
             clearTimeout(timeoutID)
