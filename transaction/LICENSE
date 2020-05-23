@@ -1,4 +1,3 @@
-/*
 Permission is hereby granted, perpetual, worldwide, non-exclusive, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 
@@ -40,58 +39,3 @@ The above copyright notice and this permission notice shall be included in all c
 
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-'use strict'
-
-export const signalingClient = ({ signalingServers }) => {
-    const urls = [signalingServers.slice(), []]
-
-    return onsignal => {
-        const ws = new WebSocket(
-            (([a, b]) => {
-                if (a.length === 0) {
-                    b.forEach(url => a.push(url))
-                    b.length = 0
-                }
-                const url = a.splice(Math.floor(Math.random() * a.length), 1)[0]
-                b.push(url)
-                return url
-            })(urls)
-        )
-
-        const onmessage = event => {
-            let signal
-            try {
-                signal = JSON.parse(event.data)
-            } catch ({ message }) {
-                ws.close(3000, `Nonsense signal. ${message}`)
-                return
-            }
-
-            if (
-                signal.caller !== undefined ||
-                signal.candidate !== undefined ||
-                signal.description !== undefined
-            ) {
-                onsignal(signal)
-            } else {
-                ws.close(3000, 'Nonsense signal.')
-            }
-        }
-
-        ws.onopen = () => {
-            ws.onmessage = onmessage
-        }
-
-        return {
-            send(data) {
-                ws.send(JSON.stringify(data))
-            },
-            close() {
-                ws.close()
-                ws.removeEventListener('message', onmessage)
-            },
-        }
-    }
-}
