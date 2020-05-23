@@ -42,56 +42,59 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-'use strict'
-
-import { signalingServer } from '../index.js'
-import util from 'util'
-
-const version = '0.1.0'
-
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = message => process.stderr.write(util.format(message) + '\n')
-
-const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
-    // `T` is a uniformly random value between `minDelay` (inclusive) and
-    // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
-    // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
-})
-
-let totalConnections = 0
-
-server.on('listening', function() {
-    const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
-})
-
-server.on('connection', function() {
-    const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
-})
-
-server.on('error', error => logError(`Server error: ${error.message}`))
-
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
-
-const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
-    server.close(() => {
-        log('Done.')
-        process.exit()
-    })
-}
-
-process.on('SIGTERM', shutdown)
-
-process.on('SIGINT', () => {
-    log()
-    shutdown()
-})
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export function __wbg_curl729_27_free(a: number): void;
+export function curl729_27_new(a: number): number;
+export function curl729_27_reset(a: number, b: number, c: number): void;
+export function curl729_27_get_digest(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number
+): void;
+export function curl729_27_absorb(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number
+): void;
+export function curl729_27_squeeze(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number
+): void;
+export function __wbg_curl729_27_ref_free(a: number): void;
+export function curl729_27_ref_reset(a: number, b: number, c: number): void;
+export function curl729_27_ref_get_digest(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number
+): void;
+export function curl729_27_ref_absorb(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number
+): void;
+export function curl729_27_ref_squeeze(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number
+): void;
+export function __wbindgen_malloc(a: number): number;
+export function __wbindgen_free(a: number, b: number): void;

@@ -44,54 +44,54 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { signalingServer } from '../index.js'
-import util from 'util'
+export const signalingClient = ({ signalingServers }) => {
+    const urls = [signalingServers.slice(), []]
 
-const version = '0.1.0'
+    return onsignal => {
+        const ws = new WebSocket(
+            (([a, b]) => {
+                if (a.length === 0) {
+                    b.forEach(url => a.push(url))
+                    b.length = 0
+                }
+                const url = a.splice(Math.floor(Math.random() * a.length), 1)[0]
+                b.push(url)
+                return url
+            })(urls)
+        )
 
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = message => process.stderr.write(util.format(message) + '\n')
+        const onmessage = event => {
+            let signal
+            try {
+                signal = JSON.parse(event.data)
+            } catch ({ message }) {
+                ws.close(3000, `Nonsense signal. ${message}`)
+                return
+            }
 
-const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
-    // `T` is a uniformly random value between `minDelay` (inclusive) and
-    // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
-    // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
-})
+            if (
+                signal.caller !== undefined ||
+                signal.candidate !== undefined ||
+                signal.description !== undefined
+            ) {
+                onsignal(signal)
+            } else {
+                ws.close(3000, 'Nonsense signal.')
+            }
+        }
 
-let totalConnections = 0
+        ws.onopen = () => {
+            ws.onmessage = onmessage
+        }
 
-server.on('listening', function() {
-    const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
-})
-
-server.on('connection', function() {
-    const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
-})
-
-server.on('error', error => logError(`Server error: ${error.message}`))
-
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
-
-const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
-    server.close(() => {
-        log('Done.')
-        process.exit()
-    })
+        return {
+            send(data) {
+                ws.send(JSON.stringify(data))
+            },
+            close() {
+                ws.close()
+                ws.removeEventListener('message', onmessage)
+            },
+        }
+    }
 }
-
-process.on('SIGTERM', shutdown)
-
-process.on('SIGINT', () => {
-    log()
-    shutdown()
-})

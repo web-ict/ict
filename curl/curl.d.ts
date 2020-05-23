@@ -42,56 +42,79 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-'use strict'
-
-import { signalingServer } from '../index.js'
-import util from 'util'
-
-const version = '0.1.0'
-
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = message => process.stderr.write(util.format(message) + '\n')
-
-const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
-    // `T` is a uniformly random value between `minDelay` (inclusive) and
-    // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
-    // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
-})
-
-let totalConnections = 0
-
-server.on('listening', function() {
-    const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
-})
-
-server.on('connection', function() {
-    const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
-})
-
-server.on('error', error => logError(`Server error: ${error.message}`))
-
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
-
-const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
-    server.close(() => {
-        log('Done.')
-        process.exit()
-    })
+/* tslint:disable */
+/* eslint-disable */
+/**
+ */
+export class Curl729_27 {
+  free(): void;
+  /**
+   * @param {number} length
+   */
+  constructor(length: number);
+  /**
+   * @param {Int8Array} length_trits
+   */
+  reset(length_trits: Int8Array): void;
+  /**
+   * @param {Int8Array} message
+   * @param {number} message_offset
+   * @param {number} message_length
+   * @param {Int8Array} digest
+   * @param {number} digest_offset
+   */
+  static get_digest(
+    message: Int8Array,
+    message_offset: number,
+    message_length: number,
+    digest: Int8Array,
+    digest_offset: number
+  ): void;
+  /**
+   * @param {Int8Array} trits
+   * @param {number} offset
+   * @param {number} length
+   */
+  absorb(trits: Int8Array, offset: number, length: number): void;
+  /**
+   * @param {Int8Array} trits
+   * @param {number} offset
+   * @param {number} length
+   */
+  squeeze(trits: Int8Array, offset: number, length: number): void;
 }
-
-process.on('SIGTERM', shutdown)
-
-process.on('SIGINT', () => {
-    log()
-    shutdown()
-})
+/**
+ */
+export class Curl729_27_Ref {
+  free(): void;
+  /**
+   * @param {Int8Array} length_trits
+   */
+  reset(length_trits: Int8Array): void;
+  /**
+   * @param {Int8Array} message
+   * @param {number} message_offset
+   * @param {number} message_length
+   * @param {Int8Array} digest
+   * @param {number} digest_offset
+   */
+  static get_digest(
+    message: Int8Array,
+    message_offset: number,
+    message_length: number,
+    digest: Int8Array,
+    digest_offset: number
+  ): void;
+  /**
+   * @param {Int8Array} trits
+   * @param {number} offset
+   * @param {number} length
+   */
+  absorb(trits: Int8Array, offset: number, length: number): void;
+  /**
+   * @param {Int8Array} trits
+   * @param {number} offset
+   * @param {number} length
+   */
+  squeeze(trits: Int8Array, offset: number, length: number): void;
+}

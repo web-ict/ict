@@ -1,0 +1,15 @@
+export {
+    trytesToTrits,
+    trytes,
+    integerValueToTrits,
+    integerValue,
+    bigIntegerValueToTrits,
+    bigIntegerValue,
+    bytesToTrits,
+    tritsToBytes,
+    lengthInTrits,
+    sizeInBytes,
+    UNKNOWN,
+    TRUE,
+    FALSE,
+} from './src/converter.js'

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html>
+    <body>
+        <script src="./index.js"></script>
+
+        <!-- Table credits: https://www.w3schools.com/html/html_tables.asp -->
+        <style>
+            body {
+                font-family: monospace;
+                color: #cfcfcf;
+                background: #000;
+                font-size: 10px;
+            }
+            h1 {
+                text-align: center;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: auto;
+            }
+            td,
+            th {
+                font-weight: normal;
+                border: 1px solid #111;
+                text-align: left;
+                padding: 6px;
+            }
+            tr:nth-child(even) {
+                background-color: #090909;
+            }
+        </style>
+        <div>
+            <br />
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 14.28%;" />
+                </colgroup>
+
+                <tr>
+                    <th>Channels</th>
+                    <th>Uptime</th>
+                    <th>Rate of new txs</th>
+                    <th>New txs</th>
+                    <th>Seen txs</th>
+                    <th>Inbound txs</th>
+                    <th>Outbound txs</th>
+                </tr>
+                <tr>
+                    <td>peer #1</td>
+                    <td id="uptime-0"></td>
+                    <td id="rate-of-new-transactions-0"></td>
+                    <td id="number-of-new-transactions-0"></td>
+                    <td id="number-of-seen-transactions-0"></td>
+                    <td id="number-of-inbound-transactions-0"></td>
+                    <td id="number-of-outbound-transactions-0"></td>
+                </tr>
+                <tr>
+                    <td>peer #2</td>
+                    <td id="uptime-1"></td>
+                    <td id="rate-of-new-transactions-1"></td>
+                    <td id="number-of-new-transactions-1"></td>
+                    <td id="number-of-seen-transactions-1"></td>
+                    <td id="number-of-inbound-transactions-1"></td>
+                    <td id="number-of-outbound-transactions-1"></td>
+                </tr>
+                <tr>
+                    <td>peer #3</td>
+                    <td id="uptime-2"></td>
+                    <td id="rate-of-new-transactions-2"></td>
+                    <td id="number-of-new-transactions-2"></td>
+                    <td id="number-of-seen-transactions-2"></td>
+                    <td id="number-of-inbound-transactions-2"></td>
+                    <td id="number-of-outbound-transactions-2"></td>
+                </tr>
+            </table>
+
+            <br />
+            <table>
+                <colgroup>
+                    <col span="1" style="width: 14.28%;" />
+                    <col span="1" style="width: 85.72%;" />
+                </colgroup>
+                <tr>
+                    <td>Inbound txs</td>
+                    <td id="number-of-inbound-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Outbound txs</td>
+                    <td id="number-of-outbound-transactions"></td>
+                </tr>
+                <tr>
+                    <td>New txs</td>
+                    <td id="number-of-new-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Seen txs</td>
+                    <td id="number-of-seen-transactions"></td>
+                </tr>
+                <tr>
+                    <td>Invalid txs</td>
+                    <td id="number-of-invalid-transactions"></td>
+                </tr>
+
+                <tr>
+                    <td>IXI txs</td>
+                    <td id="number-of-ixi-transactions"></td>
+                </tr>
+
+                <tr>
+                    <td>Enqueued txs</td>
+                    <td id="number-of-transactions-to-propagate"></td>
+                </tr>
+            </table>
+
+            <br />
+            <div id="log"></div>
+        </div>
+    </body>
+</html>
