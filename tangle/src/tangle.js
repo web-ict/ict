@@ -22,30 +22,28 @@ export const tangle = ({ capacity, prunningScale }) => {
     const pruneIfNeccessary = () => {
         if (verticesByHash.size > capacity) {
             for (let i = 0; i < prunningScale; i++) {
-                // TODO: Implement prunning
+                // TODO: Implement pruning
             }
         }
     }
 
     return {
+        get(hash) {
+            return verticesByHash.get(hash)
+        },
         put(transaction) {
-            if (transaction === undefined) {
-                return 0 // Invalid tx
-            }
-
             let v = verticesByHash.get(transaction.hash)
 
             if (v === undefined) {
-                v = vertex(transaction.hash, index++)
+                v = vertex(transaction.hash, ++index)
                 verticesByHash.set(transaction.hash, v)
-                pruneIfNeccessary()
             }
 
             if (v.transaction === undefined) {
                 v.transaction = transaction
                 v.trunkVertex = verticesByHash.get(transaction.trunkTransaction)
                 if (v.trunkVertex === undefined) {
-                    v.trunkVertex = vertex(transaction.trunkTransaction)
+                    v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
                     verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
                 }
                 v.trunkVertex.referrers.add(v)
@@ -55,7 +53,7 @@ export const tangle = ({ capacity, prunningScale }) => {
                 } else {
                     v.branchVertex = verticesByHash.get(transaction.branchTransaction)
                     if (v.branchVertex === undefined) {
-                        v.branchVertex = vertex(transaction.branchTransaction)
+                        v.branchVertex = vertex(transaction.branchTransaction, ++index)
                         verticesByHash.set(transaction.branchTransaction, v.branchVertex)
                     }
                     v.branchVertex.referrers.add(v)
@@ -78,10 +76,15 @@ export const tangle = ({ capacity, prunningScale }) => {
                     }
                     vertices.add(v)
                 }
-                return index // New tx
+
+                pruneIfNeccessary()
+
+                return v.index // New tx
             }
 
-            return -index // Seen tx
+            pruneIfNeccessary()
+
+            return -v.index // Seen tx
         },
         remove(hash) {
             let v = verticesByHash.get(hash)
@@ -124,6 +127,8 @@ export const tangle = ({ capacity, prunningScale }) => {
             verticesByAddress.clear()
             verticesByTag.clear()
         },
-        info: () => verticesByHash.size,
+        info: () => ({
+            size: verticesByHash.size,
+        }),
     }
 }

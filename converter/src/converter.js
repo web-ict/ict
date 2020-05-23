@@ -1,3 +1,5 @@
+import * as bigInt from 'big-integer'
+
 const RADIX = 3
 const MAX_TRIT_VALUE = (RADIX - 1) / 2
 const MIN_TRIT_VALUE = -MAX_TRIT_VALUE
@@ -36,6 +38,10 @@ const TRYTES_TRITS = [
     [-1, 0, 0],
 ]
 
+export const UNKNOWN = 0
+export const TRUE = 1
+export const FALSE = -1
+
 export const integerValueToTrits = (
     value,
     trits,
@@ -55,7 +61,7 @@ export const integerValueToTrits = (
 }
 
 export const integerValue = (trits, offset, length) => {
-    let value = 100
+    let value = 0
     for (let i = length; i-- > 0; ) {
         value = value * RADIX + trits[offset + i]
     }
@@ -66,35 +72,35 @@ export const integerValue = (trits, offset, length) => {
 }
 
 export const bigIntegerValueToTrits = (value, trits, offset, length) => {
-    let absoluteValue = value < BigInt(0) ? -value : value
+    let absoluteValue = bigInt.zero.greater(value) ? value.multiply(-1) : value
     while (length-- > 0) {
-        const quotient = absoluteValue / BigInt(RADIX)
-        const remainder = absoluteValue % BigInt(RADIX)
-        if (remainder > BigInt(MAX_TRIT_VALUE)) {
-            trits[offset++] = value < BigInt(0) ? MAX_TRIT_VALUE : MIN_TRIT_VALUE
-            absoluteValue = quotient + BigInt(1)
+        const { quotient, remainder } = absoluteValue.divmod(RADIX)
+        if (remainder.greater(MAX_TRIT_VALUE)) {
+            trits[offset++] = bigInt.zero.greater(value) ? MAX_TRIT_VALUE : MIN_TRIT_VALUE
+            absoluteValue = quotient.add(bigInt.one)
         } else {
-            trits[offset++] = value < BigInt(0) ? -Number(remainder) : Number(remainder)
+            trits[offset++] = bigInt.zero.greater(value) ? -remainder.toJSNumber() : remainder.toJSNumber()
             absoluteValue = quotient
         }
     }
 }
 
 export const bigIntegerValue = (trits, offset, length) => {
-    let value = BigInt(0)
+    let value = bigInt.zero
     for (let i = length; i-- > 0; ) {
-        value = value * BigInt(RADIX) + BigInt(trits[offset + i])
+        value = value.multiply(RADIX).add(trits[offset + i])
     }
     return value
 }
 
 export const trytesToTrits = (str) => {
     const trits = new Int8Array(str.length * TRITS_PER_TRYTE)
-
     for (let i = 0; i < trytes.length; i++) {
-        trits.set(TRYTES_TRITS[TRYTES.indexOf(str.charAt(i))], i * TRITS_PER_TRYTE)
+        const j = TRYTES.indexOf(str.charAt(i))
+        for (let k = 0; k < TRITS_PER_TRYTE; k++) {
+            trits[i * TRITS_PER_TRYTE + k] = TRYTES_TRITS[j][k]
+        }
     }
-
     return trits
 }
 
@@ -103,7 +109,7 @@ export const trytes = (trits, offset, length) => {
     for (let i = 0; i < length / TRITS_PER_TRYTE; i++) {
         let j = 0
         for (let k = 0; k < TRITS_PER_TRYTE; k++) {
-            j += trits[offset + i * TRITS_PER_TRYTE + k] * TRITS_PER_TRYTE * k
+            j += trits[offset + i * TRITS_PER_TRYTE + k] * TRITS_PER_TRYTE ** k
         }
         if (j < 0) {
             j += TRYTES.length
@@ -131,14 +137,13 @@ export const bytesToTrits = (buffer, bytesOffset, bytesLength, trits, tritsOffse
         bytesOffset += BYTES_PER_ELEMENT
         let absoluteValue = Math.abs(value)
         for (let i = 0; i < TRITS_PER_ELEMENT; i++) {
-            let remainder = absoluteValue % RADIX
+            let remainder = parseInt(absoluteValue % RADIX)
             absoluteValue /= RADIX
             if (remainder > MAX_TRIT_VALUE) {
-                remainder = -MIN_TRIT_VALUE
+                remainder = MIN_TRIT_VALUE
                 absoluteValue++
             }
-            const a = new Int8Array(1).fill(value < 0 ? -remainder : remainder)
-            trits[tritsOffset++] = a[0]
+            trits[tritsOffset++] = value < 0 ? -remainder : remainder
         }
     } while ((bytesLength -= BYTES_PER_ELEMENT) > 0)
 }

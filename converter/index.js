@@ -9,4 +9,7 @@ export {
     tritsToBytes,
     lengthInTrits,
     sizeInBytes,
+    UNKNOWN,
+    TRUE,
+    FALSE,
 } from './src/converter.js'

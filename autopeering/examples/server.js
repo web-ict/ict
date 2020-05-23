@@ -15,21 +15,17 @@ const server = signalingServer({
     // `T` is a uniformly random value between `minDelay` (inclusive) and
     // `maxDelay` (inclusive).
     minDelay: 1,
-    maxDelay: 3000,
-    // How many requests can be buffered.
-    watermark: 1000,
+    maxDelay: 1000,
     // Closes connections that stay innactive for at least `heartbeatDelay`ms.
     // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 2 * 60 * 1000,
+    heartbeatDelay: 60 * 60 * 1000,
 })
 
 let totalConnections = 0
 
 server.on('listening', function() {
     const { address, port } = this.address()
-    log(
-        `Peermatcher v${version} started listening on ws://${address}:${port}...`
-    )
+    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
 })
 
 server.on('connection', function() {

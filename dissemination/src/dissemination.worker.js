@@ -1,6 +1,7 @@
 'use strict'
 
 import { delayQueue } from './delay-queue.js'
+import { UNKNOWN } from '../../converter'
 
 const indexedTimers = new Map()
 let queue
@@ -13,7 +14,7 @@ onmessage = (event) => {
         queue = delayQueue(A, B)
     } else {
         const i = parseInt(data[0])
-        if (i > 0 /* new tx */) {
+        if (i > UNKNOWN /* new tx */) {
             indexedTimers.set(
                 i,
                 queue.schedule(() => {

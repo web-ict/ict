@@ -4,37 +4,31 @@ import EventEmitter from 'events'
 import WebSocket from 'ws'
 import { delayQueue } from '../../dissemination/src/delay-queue.js'
 
-export const signalingServer = ({
-    host,
-    port,
-    minDelay,
-    maxDelay,
-    heartbeatDelay,
-}) => {
+export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay }) => {
     const server = new WebSocket.Server({ host, port })
     const queue = delayQueue(minDelay, maxDelay)
     const buffer = []
     let heartbeatInterval
 
-    const match = z => {
-        z.peer = new Promise(resolve => (z.resolvePeer = resolve))
-        z.timeoutID = queue.schedule(() => {
+    const match = a => {
+        a.peer = new Promise(resolve => (a.resolvePeer = resolve))
+        a.timeoutID = queue.schedule(() => {
             for (let i = 0; i < buffer.length; i++) {
-                let y = buffer[i]
-                if (y.closed) {
+                let b = buffer[i]
+                if (b.closed) {
                     buffer.splice(i, 1)
-                } else if (y.remoteAddress !== z.remoteAddress) {
+                } else if (b.remoteAddress !== a.remoteAddress) {
                     buffer.splice(i, 1)
                     // Assign roles
-                    z.caller = true // Caller issues SDP offer
-                    y.caller = false // Callee answers SDP offer
+                    a.caller = true // Caller issues SDP offer
+                    b.caller = false // Callee answers SDP offer
                     // Match
-                    z.resolvePeer(y)
-                    y.resolvePeer(z)
+                    a.resolvePeer(b)
+                    b.resolvePeer(a)
                     return
                 }
             }
-            buffer.push(z)
+            buffer.push(a)
         })
     }
 
@@ -64,10 +58,7 @@ export const signalingServer = ({
         try {
             signal = JSON.parse(message)
         } catch (error) {
-            this.close(
-                1003 /* = Unsupported data */,
-                `Nonsesnse signal. ${error.message}`
-            )
+            this.close(1003 /* = Unsupported data */, `Nonsesnse signal. ${error.message}`)
             return
         }
 
@@ -94,10 +85,7 @@ export const signalingServer = ({
 
     const onListening = () => {
         if (heartbeatDelay) {
-            heartbeatInterval = setInterval(
-                heartbeatIntervalFunction,
-                heartbeatDelay
-            )
+            heartbeatInterval = setInterval(heartbeatIntervalFunction, heartbeatDelay)
         }
     }
 
