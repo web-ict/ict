@@ -1,0 +1,15 @@
+{
+  "name": "curl",
+  "contributors": [
+    "Chris Dukakis <chrisdukakis@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "curl_bg.wasm",
+    "curl.js",
+    "curl.d.ts"
+  ],
+  "module": "curl.js",
+  "types": "curl.d.ts",
+  "sideEffects": false
+}
