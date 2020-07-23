@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/tangle",
-    "version": "0.0.0",
+    "version": "0.0.0-beta.0",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -13,8 +13,8 @@
     },
     "author": "Chris Dukakis",
     "dependencies": {
-        "@web-ict/converter": "0.0.0",
-        "@web-ict/transaction": "0.0.0"
+        "@web-ict/converter": "^0.0.0-beta.0",
+        "@web-ict/transaction": "^0.0.0-beta.0"
     },
     "devDependencies": {
         "eslint": "^6.8.0",

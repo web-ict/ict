@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/autopeering",
-    "version": "0.0.0",
+    "version": "0.0.0-beta.0",
     "description": "Autopeering of WebRTC-enabled ict nodes.",
     "publishConfig": {
         "access": "public"
@@ -15,8 +15,8 @@
     },
     "author": "Chris Dukakis <chrisdukakis@gmail.com>",
     "dependencies": {
-        "ws": "^7.2.1",
-        "@web-ict/dissemination": "0.0.0"
+        "@web-ict/dissemination": "^0.0.0-beta.0",
+        "ws": "^7.2.1"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
