@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use-strict'
 
-import { trytes, integerValue, bigIntegerValue, FALSE, UNKNOWN } from '../../converter'
+import { trytes, integerValue, bigIntegerValue, FALSE, UNKNOWN } from '@web-ict/converter'
 
 export const HASH_LENGTH = 243
 

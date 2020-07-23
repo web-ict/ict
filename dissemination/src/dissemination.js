@@ -45,7 +45,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import Worker from './dissemination.worker.js'
-import { UNKNOWN } from '../../converter'
+import { UNKNOWN } from '@web-ict/converter'
 
 export const dissemination = function ({ A, B }) {
     const indexedMessages = new Map()

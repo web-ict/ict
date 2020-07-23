@@ -1,9 +1,12 @@
 {
-  "name": "curl",
+  "name": "@web-ict/curl",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "contributors": [
     "Chris Dukakis <chrisdukakis@gmail.com>"
   ],
-  "version": "0.1.0",
   "files": [
     "curl_bg.wasm",
     "curl.js",
