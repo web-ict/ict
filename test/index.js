@@ -44,8 +44,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { node } from '../node'
-import { WebRTC_Peer, signalingClient } from '../autopeering'
+import { node } from '@web-ict/node'
+import { WebRTC_Peer, signalingClient } from '@web-ict/autopeering'
 import {
     TRANSACTION_LENGTH,
     NULL_HASH,
@@ -60,10 +60,10 @@ import {
     BUNDLE_NONCE_OFFSET,
     MESSAGE_OR_SIGNATURE_OFFSET,
     BUNDLE_NONCE_LENGTH,
-} from '../transaction'
-import { integerValueToTrits, FALSE, TRUE } from '../converter'
+} from '@web-ict/transaction'
+import { integerValueToTrits, FALSE, TRUE } from '@web-ict/converter'
 
-import('../curl').then(({ Curl729_27 }) => {
+import('@web-ict/curl').then(({ Curl729_27 }) => {
     const test = node({
         autopeering: {
             peer: WebRTC_Peer({

@@ -45,7 +45,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import { delayQueue } from './delay-queue.js'
-import { UNKNOWN } from '../../converter'
+import { UNKNOWN } from '@web-ict/converter'
 
 const indexedTimers = new Map()
 let queue

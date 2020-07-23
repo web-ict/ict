@@ -44,8 +44,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { NULL_HASH, NULL_TAG } from '../../transaction'
-import { trytes } from '../../converter'
+import { NULL_HASH, NULL_TAG } from '@web-ict/transaction'
+import { trytes } from '@web-ict/converter'
 
 const NULL_HASH_TRYTES = trytes(NULL_HASH)
 const NULL_TAG_TRYTES = trytes(NULL_TAG)

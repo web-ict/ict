@@ -46,7 +46,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import EventEmitter from 'events'
 import WebSocket from 'ws'
-import { delayQueue } from '../../dissemination/src/delay-queue.js'
+import { delayQueue } from '@web-ict/dissemination'
 
 export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay }) => {
     const server = new WebSocket.Server({ host, port })
@@ -54,8 +54,8 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
     const buffer = []
     let heartbeatInterval
 
-    const match = a => {
-        a.peer = new Promise(resolve => (a.resolvePeer = resolve))
+    const match = (a) => {
+        a.peer = new Promise((resolve) => (a.resolvePeer = resolve))
         a.timeoutID = queue.schedule(() => {
             for (let i = 0; i < buffer.length; i++) {
                 let b = buffer[i]
@@ -76,14 +76,14 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
         })
     }
 
-    const forward = signal => socket => {
+    const forward = (signal) => (socket) => {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(signal))
         }
     }
 
     const heartbeatIntervalFunction = () =>
-        server.clients.forEach(socket => {
+        server.clients.forEach((socket) => {
             if (socket.responded) {
                 socket.responded = false
                 socket.ping(() => {})
@@ -92,11 +92,11 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
             }
         })
 
-    const heartbeat = function() {
+    const heartbeat = function () {
         this.responded = true
     }
 
-    const onMessage = function(message) {
+    const onMessage = function (message) {
         let signal
 
         try {
@@ -114,13 +114,13 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
         }
     }
 
-    const terminateSocketIfExists = socket => {
+    const terminateSocketIfExists = (socket) => {
         if (socket) {
             socket.terminate()
         }
     }
 
-    const onSocketClose = function() {
+    const onSocketClose = function () {
         queue.cancel(this.timeoutID)
         this.closed = true
         this.resolvePeer()
@@ -151,7 +151,7 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
 
     const onClose = () => clearInterval(heartbeatInterval)
 
-    return function() {
+    return function () {
         server.on('listening', () => {
             onListening()
             this.emit('listening')
@@ -168,7 +168,7 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
         return Object.assign(
             this,
             {
-                close: callback => server.close(callback),
+                close: (callback) => server.close(callback),
                 address: () => server.address(),
             },
             EventEmitter.prototype
