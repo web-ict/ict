@@ -10,7 +10,7 @@
     "author": "Chris Dukakis <chrisdukakis@gmail.com>",
     "repository": {
         "type": "git",
-        "url": "https://github.com/web-ict/ict/tree/master/test"
+        "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
         "@web-ict/autopeering": "^0.0.0-beta.1",
@@ -31,5 +31,6 @@
         "webpack-cli": "^3.1.2",
         "webpack-dev-server": "^3.1.10",
         "worker-loader": "^2.0.0"
-    }
+    },
+    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
 }
