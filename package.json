@@ -6,6 +6,10 @@
     "clean": "lerna clean",
     "publish": "lerna publish"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/web-ict/ict"
+  },
   "devDependencies": {
     "lerna": "^3.22.1"
   }

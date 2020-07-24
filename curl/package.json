@@ -7,6 +7,10 @@
   "contributors": [
     "Chris Dukakis <chrisdukakis@gmail.com>"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/web-ict/ict/tree/master/curl"
+  },
   "files": [
     "curl_bg.wasm",
     "curl.js",
