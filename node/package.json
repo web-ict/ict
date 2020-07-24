@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/node",
-    "version": "0.0.0-beta.0",
+    "version": "0.0.0-beta.1",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -17,11 +17,11 @@
         "url": "https://github.com/web-ict/ict/tree/master/node"
     },
     "dependencies": {
-        "@web-ict/autopeering": "^0.0.0-beta.0",
-        "@web-ict/converter": "^0.0.0-beta.0",
-        "@web-ict/dissemination": "^0.0.0-beta.0",
-        "@web-ict/tangle": "^0.0.0-beta.0",
-        "@web-ict/transaction": "^0.0.0-beta.0"
+        "@web-ict/autopeering": "^0.0.0-beta.1",
+        "@web-ict/converter": "^0.0.0-beta.1",
+        "@web-ict/dissemination": "^0.0.0-beta.1",
+        "@web-ict/tangle": "^0.0.0-beta.1",
+        "@web-ict/transaction": "^0.0.0-beta.1"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
