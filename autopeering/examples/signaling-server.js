@@ -46,45 +46,48 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { signalingServer } from '../index.js'
 import util from 'util'
+import fs from 'fs'
 
-const version = '0.1.0'
+const { name, version } = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
 
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = message => process.stderr.write(util.format(message) + '\n')
+const log = (message = '') =>
+    process.stdout.write(util.format(message === '' ? '' : `${name}@${version}: ${message}`) + '\n')
+const logError = (message) => process.stderr.write(util.format(`${name}@${version}: ${message}`) + '\n')
 
 const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
+    host: process.env.HOST || 'localhost',
+    port: process.env.PORT || 8080,
+    // Wait `T`ms before matching.
     // `T` is a uniformly random value between `minDelay` (inclusive) and
     // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
+    minDelay: process.env.MIN_DELAY || 1,
+    maxDelay: process.env.MAX_DELAY || 1000,
+    // Closes conections that stay innactive for at least `heartbeatDelay`ms.
     // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
+    heartbeatDelay: process.env.HEARTBEAT_DELAY || 60 * 60 * 1000,
 })
 
 let totalConnections = 0
 
-server.on('listening', function() {
+server.on('listening', function () {
     const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
+    log(`Signaling server started listening on ws://${address}:${port}...`)
 })
 
-server.on('connection', function() {
+server.on('connection', function (socket) {
     const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
+    const i = ++totalConnections
+    log(`Opening signaling channel #${i} on ws://${address}:${port}`)
+    socket.on('close', () => log(`Closed signaling channel #${i} on ws://${address}:${port}.`))
 })
 
-server.on('error', error => logError(`Server error: ${error.message}`))
+server.on('error', (error) => logError(`Signaling server error: ${error.message}`))
 
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
+server.on('close', () => log(`Signaling server stopped listening on ws://${address}:${port}.`))
 
 const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
+    log(`Shutting down signaling server on ws://${address}:${port}...`)
     server.close(() => {
-        log('Done.')
         process.exit()
     })
 }
