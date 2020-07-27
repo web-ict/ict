@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: 14
       - run: npm ci
+      - run: npm run bootstrap
 
   publish-gpr:
     needs: build
