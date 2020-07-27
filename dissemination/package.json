@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/dissemination",
-    "version": "0.0.0-beta.4",
+    "version": "0.0.0-beta.5",
     "description": "Message dissemination",
     "publishConfig": {
         "access": "public"
@@ -19,7 +19,7 @@
         "directory": "dissemination"
     },
     "dependencies": {
-        "@web-ict/converter": "^0.0.0-beta.4"
+        "@web-ict/converter": "^0.0.0-beta.5"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
