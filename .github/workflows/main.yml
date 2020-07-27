@@ -31,6 +31,8 @@ jobs:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
       - run: npm ci
+      - run: git config --global user.email chrisdukakis@gmail.com
+      - run: git config --global user.name Chris Dukakis
       - run: npm run publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
