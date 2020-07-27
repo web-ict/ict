@@ -77,16 +77,16 @@ server.on('listening', function () {
 server.on('connection', function (socket) {
     const { address, port } = this.address()
     const i = ++totalConnections
-    log(`Opening signaling channel #${i} on ws://${address}:${port}`)
+    log(`Opening signaling channel #${i} on ws://${address}:${port}.`)
     socket.on('close', () => log(`Closed signaling channel #${i} on ws://${address}:${port}.`))
 })
 
 server.on('error', (error) => logError(`Signaling server error: ${error.message}`))
 
-server.on('close', () => log(`Signaling server stopped listening on ws://${address}:${port}.`))
+server.on('close', () => log(`Signaling server closed.`))
 
 const shutdown = () => {
-    log(`Shutting down signaling server on ws://${address}:${port}...`)
+    log(`Shutting down signaling server...`)
     server.close(() => {
         process.exit()
     })
