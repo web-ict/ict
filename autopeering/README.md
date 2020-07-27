@@ -21,6 +21,11 @@ PORT=8080 MIN_DELAY=1 MAX_DELAY=1000 HEARTBEAT_DELAY=3600000 node node_modules/@
 
 #### Running with docker
 
+```
+docker pull webict/autopeering:latest
+docker run -p 8080:8080 -d webict/autopeering
+```
+
 ## 2. Signaling channel
 
 A channel connecting 2 peers for exchanging SDP signals.
