@@ -44,54 +44,34 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { signalingServer } from '../index.js'
-import util from 'util'
+import { delayQueue } from './delay-queue.js'
+import { UNKNOWN } from '@web-ict/converter'
 
-const version = '0.1.0'
+export const dissemination = function ({ A, B }) {
+    const indexedTimers = new Map()
+    const queue = delayQueue(A, B)
+    let f
 
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = message => process.stderr.write(util.format(message) + '\n')
-
-const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
-    // `T` is a uniformly random value between `minDelay` (inclusive) and
-    // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
-    // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
-})
-
-let totalConnections = 0
-
-server.on('listening', function() {
-    const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
-})
-
-server.on('connection', function() {
-    const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
-})
-
-server.on('error', error => logError(`Server error: ${error.message}`))
-
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
-
-const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
-    server.close(() => {
-        log('Done.')
-        process.exit()
-    })
+    return {
+        launch(send) {
+            f = send
+        },
+        terminate() {},
+        postMessage(i, m) {
+            if (i > UNKNOWN /* new tx */) {
+                indexedTimers.set(
+                    i,
+                    queue.schedule(() => {
+                        f(m)
+                        indexedTimers.delete(i)
+                    })
+                )
+            } /* seen tx */ else {
+                const abs = Math.abs(i)
+                queue.cancel(indexedTimers.get(abs))
+                indexedTimers.delete(abs)
+            }
+        },
+        info: () => indexedTimers.size,
+    }
 }
-
-process.on('SIGTERM', shutdown)
-
-process.on('SIGINT', () => {
-    log()
-    shutdown()
-})

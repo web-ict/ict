@@ -5,11 +5,11 @@
     "publishConfig": {
         "access": "public"
     },
+    "browser": "browser.js",
     "main": "index.js",
     "type": "module",
-    "browser": "browser.js",
     "scripts": {
-        "start": "node ./examples/server.js",
+        "start": "node ./examples/signaling-server.js",
         "lint": "eslint ./",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
