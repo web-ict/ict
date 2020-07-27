@@ -4,7 +4,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap --hoist",
     "clean": "lerna clean",
-    "publish": "lerna publish"
+    "publish": "lerna publish prerelease --yes"
   },
   "repository": {
     "type": "git",
