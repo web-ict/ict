@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/converter",
-    "version": "0.0.0-beta.3",
+    "version": "0.0.0-beta.4",
     "description": "",
     "publishConfig": {
         "access": "public"
