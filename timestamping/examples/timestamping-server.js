@@ -47,7 +47,7 @@ import { trytes, trytesToTrits } from '@web-ict/converter'
 import Curl from '@web-ict/curl'
 import fs from 'fs'
 import util from 'util'
-import { TIMESTAMP_LENGTH } from '../src/hashchain.js'
+import { TIMESTAMP_LENGTH } from '../src/timestamper.js'
 
 const { name, version } = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
 

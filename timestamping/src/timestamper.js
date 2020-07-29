@@ -42,30 +42,6 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*
-A timestamper chooses 3 random secret seeds.
-For each seed the timestamper generates a very long hash chain (e.g. Curl(Curl(Curl(seed))) = X0) and publishes X0, Y0, and Z0 obtained from all 3 seeds.
-At timestamp 0 the timestamper releases either X0 and Y0, or X0 and Z0, or Y0 and Z0.
-At timestamp 1 the timestamper releases, for example, X1 and Y1 such that Curl(X1) = X0 and Curl(Y1) = Y0.
-
-We use granularity of N seconds, each timestamper decides himself what N to pick, smaller N will require to generate longer hash chains.
-The timestamper can omit some timestamps, in this case the corresponding Xk, Yk, Zk are not published.
-The gap won't lead to problem for timestamp verification, because instead of Curl(X) we'll just need to do something like Curl(Curl(Curl(X))).
-
-We use 3 seeds but transactions include only derivatives of 2 of them. Each timestamper is supposed to run 3 independent servers.
-At any moment one of the servers can go offline for maintenance or because of a fault.
-A transaction with a timestamp looks like this:
-[TimestamperId][TimestampValue][Y][Z] or 
-[TimestamperId][X][TimestampValue][Z] or 
-[TimestamperId][X][Y][TimestampValue], depending on if X, Y, or Z is omitted.
-
-TimestampValue, X, Y, Z are all 81-trit long, so last 3 fields fit into 243 trits.
-[TimestamperId] can be taken from another fragment of timestamping transaction or it can be derived logically.
-
-Taking into account that signature verification is expensive resource-wise it's advized to verify timestamp validity first.
-If timestamp is not very old and valid then we can do signature verification.npm
- */
-
 'use strict'
 
 import { MESSAGE_OR_SIGNATURE_END } from '@web-ict/transaction'
@@ -76,43 +52,30 @@ import url from 'url'
 export const TIMESTAMP_LENGTH = 81
 export const TIMESTAMP_OFFSET = MESSAGE_OR_SIGNATURE_END - 3 * TIMESTAMP_LENGTH
 
-export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, retrytIntervalDuration }) => {
-    const transactions = new Map()
+export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, retryIntervalDuration }) => {
     const sockets = new Array(3)
-    let index = 0
+    const requests = new Map()
+    let timestampValue = 0
     let running = true
 
     const onmessage = (socket) => (event) => {
-        let message
         try {
-            message = JSON.parse(event.data)
-        } catch {
-            socket.close(3000, 'Invalid message.')
-            return
-        }
+            const { timestamp, i, j } = JSON.parse(event.data)
+            const request = requests.get(i)
 
-        console.log(message)
+            if (request !== undefined) {
+                const { timestamps, retryInterval, resolve } = request
 
-        const transaction = transactions.get(message.timestampValue)
-        if (transaction) {
-            const numberOfTimestamps = transaction.timestamps.filter((t) => t === true).length
-            if (numberOfTimestamps < 2) {
-                transaction.trits.set(
-                    trytesToTrits(message.timestamp).slice(0, TIMESTAMP_LENGTH),
-                    TIMESTAMP_OFFSET + message.timestampIndex * TIMESTAMP_LENGTH
-                )
-            } else if (numberOfTimestamps === 2) {
-                integerValueToTrits(
-                    message.timestampValue,
-                    transaction.trits,
-                    TIMESTAMP_OFFSET + transaction.timestamps.indexOf(false) * TIMESTAMP_LENGTH,
-                    TIMESTAMP_LENGTH
-                )
-                transactions.delete(message.timestampValue)
-                clearInterval(transaction.interval)
-                transaction.resolve(transaction.trits)
+                if (timestamps.filter((timestamp) => timestamp !== undefined).length === 2) {
+                    requests.delete(i)
+                    clearInterval(retryInterval)
+                    resolve(timestamps)
+                } else {
+                    timestamps[j] = timestamp
+                }
             }
-            transaction.timestamps[message.timestampIndex] = true
+        } catch ({ message }) {
+            socket.close(3000, message)
         }
     }
 
@@ -125,13 +88,12 @@ export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, ret
             },
         }))
 
-        let resolveReady
-        socket.ready = new Promise((resolve) => (resolveReady = resolve))
-
-        socket.onopen = () => {
-            console.log('open')
-            resolveReady()
-        }
+        socket.ready = new Promise(
+            (resolve) =>
+                (socket.onopen = () => {
+                    resolve()
+                })
+        )
 
         socket.onmessage = onmessage(socket)
 
@@ -146,10 +108,21 @@ export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, ret
         }
     }
 
-    timestampingServers.forEach(connect)
+    const send = (i) => sockets.forEach((socket) => socket.ready.then(() => socket.send(JSON.stringify({ i }))))
 
-    const requestTimestamps = (timestampValue) =>
-        sockets.forEach((socket) => socket.ready.then(() => socket.send(JSON.stringify({ timestampValue }))))
+    const retry = (i) => () => send(i)
+
+    const request = (i) =>
+        new Promise((resolve) => {
+            requests.set(i, {
+                timestamps: Array(3),
+                retryInterval: setInterval(retry(i), retryIntervalDuration),
+                resolve,
+            })
+            send(i)
+        })
+
+    timestampingServers.forEach(connect)
 
     return {
         close() {
@@ -157,18 +130,15 @@ export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, ret
             sockets.forEach((socket) => socket.close())
         },
         timestamp(trits) {
-            const timestampValue = index
-            index++
+            const i = timestampValue
+            timestampValue++
 
-            return new Promise((resolve) => {
-                transactions.set(timestampValue, {
-                    resolve,
-                    trits,
-                    timestamps: Array(3).fill(false),
-                    interval: setInterval(() => requestTimestamps(timestampValue), retrytIntervalDuration),
-                })
-
-                requestTimestamps(timestampValue)
+            return request(i).then((timestamps) => {
+                timestamps.forEach((timestamp, j) =>
+                    timestamp === undefined
+                        ? integerValueToTrits(i, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                        : trytesToTrits(timestamp, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                )
             })
         },
     }

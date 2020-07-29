@@ -54,8 +54,9 @@ export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, h
         throw new Error('Illegal length.')
     }
 
-    if (!(timestampIndex === 0 || timestampIndex === 1 || timestampIndex === 2)) {
-        throw new Error('Illegal timestampIndex.')
+    const j = timestampIndex
+    if (!(j === 0 || j === 1 || j === 2)) {
+        throw new Error('Illegal index: j.')
     }
 
     const buffer = hashChain(Curl729_27)(seed, length, TIMESTAMP_LENGTH)
@@ -63,17 +64,16 @@ export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, h
 
     const onmessage = (socket) => (data) => {
         try {
-            const { timestampValue } = JSON.parse(data)
-            const offset = timestampValue * TIMESTAMP_LENGTH
+            const { i } = JSON.parse(data)
             socket.send(
                 JSON.stringify({
-                    timestampValue,
-                    timestampIndex,
-                    timestamp: trytes(buffer.slice(offset, offset + TIMESTAMP_LENGTH), 0, TIMESTAMP_LENGTH),
+                    timestamp: trytes(buffer, i * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH),
+                    i,
+                    j,
                 })
             )
-        } catch (error) {
-            socket.terminate()
+        } catch ({ message }) {
+            socket.close(3000, message)
         }
     }
 
@@ -83,7 +83,7 @@ export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, h
                 .toString()
                 .split(':')
             if (user !== userB || password !== passwordB) {
-                socket.terminate()
+                socket.close(3001, 'Unauthorized.')
                 return
             }
         }
@@ -94,8 +94,8 @@ export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, h
     server.on('connection', onconnection)
 
     return {
-        getHash(index = 0) {
-            return buffer.slice(index * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+        getHash(i = 0) {
+            return buffer.slice(i * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
         },
         close(callback) {
             server.close(callback)
