@@ -1,15 +1,3 @@
-export {
-    trytesToTrits,
-    trytes,
-    integerValueToTrits,
-    integerValue,
-    bigIntegerValueToTrits,
-    bigIntegerValue,
-    bytesToTrits,
-    tritsToBytes,
-    lengthInTrits,
-    sizeInBytes,
-    UNKNOWN,
-    TRUE,
-    FALSE,
-} from './src/converter.js'
+export { hashChain } from './src/hashchain.js'
+export { TIMESTAMP_LENGTH, timestamper } from './src/timestamper.js'
+export { timestampingServer } from './src/timestamping-server.js'
