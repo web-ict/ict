@@ -50,7 +50,7 @@ import { TRANSACTION_LENGTH } from '@web-ict/transaction'
 
 const { timestamp, close } = timestamper({
     timestampingServers: process.env.TIMESTAMPING_SERVERS.split(' '),
-    retrytIntervalDuration: process.env.RETRY_INTERVAL_DURATION,
+    retryIntervalDuration: process.env.RETRY_INTERVAL_DURATION,
     reconnectTimeoutDuration: process.env.RECONNECT_TIMEOUT_DURATION,
 })
 
