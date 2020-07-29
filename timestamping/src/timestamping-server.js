@@ -95,7 +95,7 @@ export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, h
 
     return {
         getHash(i = 0) {
-            return buffer.slice(i * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+            return buffer.slice(i * TIMESTAMP_LENGTH, (i + 1) * TIMESTAMP_LENGTH)
         },
         close(callback) {
             server.close(callback)
