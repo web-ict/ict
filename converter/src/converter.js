@@ -141,7 +141,7 @@ export const bigIntegerValue = (trits, offset, length) => {
 
 export const trytesToTrits = (str) => {
     const trits = new Int8Array(str.length * TRITS_PER_TRYTE)
-    for (let i = 0; i < trytes.length; i++) {
+    for (let i = 0; i < str.length; i++) {
         const j = TRYTES.indexOf(str.charAt(i))
         for (let k = 0; k < TRITS_PER_TRYTE; k++) {
             trits[i * TRITS_PER_TRYTE + k] = TRYTES_TRITS[j][k]
