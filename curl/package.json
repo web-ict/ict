@@ -9,15 +9,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/web-ict/ict"
+    "url": "https://github.com/web-ict/ict",
+    "directory": "curl"
   },
-  "files": [
-    "curl_bg.wasm",
-    "curl.js",
-    "curl.d.ts"
-  ],
-  "module": "curl.js",
-  "types": "curl.d.ts",
+  "main": "./nodejs/curl.js",
+  "module": "./bundler/curl.js",
   "sideEffects": false,
   "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
 }

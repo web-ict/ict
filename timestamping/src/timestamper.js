@@ -42,79 +42,104 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* tslint:disable */
-/* eslint-disable */
-/**
- */
-export class Curl729_27 {
-  free(): void;
-  /**
-   * @param {number} length
-   */
-  constructor(length: number);
-  /**
-   * @param {Int8Array} length_trits
-   */
-  reset(length_trits: Int8Array): void;
-  /**
-   * @param {Int8Array} message
-   * @param {number} message_offset
-   * @param {number} message_length
-   * @param {Int8Array} digest
-   * @param {number} digest_offset
-   */
-  static get_digest(
-    message: Int8Array,
-    message_offset: number,
-    message_length: number,
-    digest: Int8Array,
-    digest_offset: number
-  ): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  absorb(trits: Int8Array, offset: number, length: number): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  squeeze(trits: Int8Array, offset: number, length: number): void;
-}
-/**
- */
-export class Curl729_27_Ref {
-  free(): void;
-  /**
-   * @param {Int8Array} length_trits
-   */
-  reset(length_trits: Int8Array): void;
-  /**
-   * @param {Int8Array} message
-   * @param {number} message_offset
-   * @param {number} message_length
-   * @param {Int8Array} digest
-   * @param {number} digest_offset
-   */
-  static get_digest(
-    message: Int8Array,
-    message_offset: number,
-    message_length: number,
-    digest: Int8Array,
-    digest_offset: number
-  ): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  absorb(trits: Int8Array, offset: number, length: number): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  squeeze(trits: Int8Array, offset: number, length: number): void;
+'use strict'
+
+import { MESSAGE_OR_SIGNATURE_END } from '@web-ict/transaction'
+import { integerValueToTrits, trytesToTrits } from '@web-ict/converter'
+import WebSocket from 'ws'
+import url from 'url'
+
+export const TIMESTAMP_LENGTH = 81
+export const TIMESTAMP_OFFSET = MESSAGE_OR_SIGNATURE_END - 3 * TIMESTAMP_LENGTH
+
+export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, retryIntervalDuration }) => {
+    const sockets = new Array(3)
+    const requests = new Map()
+    let timestampValue = 0
+    let running = true
+
+    const onmessage = (socket) => (event) => {
+        try {
+            const { timestamp, i, j } = JSON.parse(event.data)
+            const request = requests.get(i)
+
+            if (request !== undefined) {
+                const { timestamps, retryInterval, resolve } = request
+
+                if (timestamps.filter((timestamp) => timestamp !== undefined).length === 2) {
+                    requests.delete(i)
+                    clearInterval(retryInterval)
+                    resolve(timestamps)
+                } else {
+                    timestamps[j] = timestamp
+                }
+            }
+        } catch ({ message }) {
+            socket.close(3000, message)
+        }
+    }
+
+    const connect = (server, i) => {
+        const { username, password } = new URL(server)
+        const socket = (sockets[i] = new WebSocket(url.format(new URL(server), { auth: false }), {
+            perMessageDeflate: false,
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+            },
+        }))
+
+        socket.ready = new Promise(
+            (resolve) =>
+                (socket.onopen = () => {
+                    resolve()
+                })
+        )
+
+        socket.onmessage = onmessage(socket)
+
+        socket.onclose = () => {
+            if (running) {
+                setTimeout(() => connect(server, i), reconnectTimeoutDuration)
+            }
+        }
+
+        socket.onerror = () => {
+            socket.close()
+        }
+    }
+
+    const send = (i) => sockets.forEach((socket) => socket.ready.then(() => socket.send(JSON.stringify({ i }))))
+
+    const retry = (i) => () => send(i)
+
+    const request = (i) =>
+        new Promise((resolve) => {
+            requests.set(i, {
+                timestamps: Array(3),
+                retryInterval: setInterval(retry(i), retryIntervalDuration),
+                resolve,
+            })
+            send(i)
+        })
+
+    timestampingServers.forEach(connect)
+
+    return {
+        close() {
+            running = false
+            sockets.forEach((socket) => socket.close())
+        },
+        timestamp(trits) {
+            const i = timestampValue
+            timestampValue++
+
+            return request(i).then((timestamps) => {
+                timestamps.forEach((timestamp, j) =>
+                    timestamp === undefined
+                        ? integerValueToTrits(i, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                        : trytesToTrits(timestamp, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                )
+            })
+        },
+    }
 }
