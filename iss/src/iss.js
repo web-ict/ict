@@ -51,147 +51,135 @@ export const MIN_TRYTE_VALUE = -13
 export const MAX_TRYTE_VALUE = 13
 export const NUMBER_OF_SECURITY_LEVELS = 3
 export const HASH_LENGTH = 243
-export const SEED_LENGTH = HASH_LENGTH
-export const KEY_FRAGMENT_LENGTH = (SEED_LENGTH / NUMBER_OF_SECURITY_LEVELS / TRYTE_WIDTH) * SEED_LENGTH
-export const KEY_SEGMENT_LENGTH = KEY_FRAGMENT_LENGTH / SEED_LENGTH
-export const SIGNATURE_FRAGMENT_LENGTH = KEY_FRAGMENT_LENGTH
-export const SIGNATURE_SEGMENT_LENGTH = KEY_SEGMENT_LENGTH
-export const DIGEST_LENGTH = HASH_LENGTH
-export const ADDRESS_LENGTH = HASH_LENGTH
-export const BUNDLE_LENGTH = HASH_LENGTH / TRYTE_WIDTH
-export const BUNDLE_FRAGMENT_LENGTH = BUNDLE_LENGTH / NUMBER_OF_SECURITY_LEVELS
+export const KEY_SIGNATURE_FRAGMENT_LENGTH = (HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS / TRYTE_WIDTH) * HASH_LENGTH
+export const BUNDLE_FRAGMENT_LENGTH = HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS
 
 export const subseed = (Curl729_27) => (seed, index) => {
-    if (seed.length < SEED_LENGTH) {
-        throw new Error(`Illegal seed length. Must be ${SEED_LENGTH} trits.`)
-    }
     if (!Number.isInteger(index) || index < 0) {
         throw new Error('Illegal subseed index.')
     }
 
-    const subseedTrits = new Int8Array(SEED_LENGTH)
-
-    const curl = new Curl729_27(SEED_LENGTH)
-    curl.absorb(add(seed, integerValueToTrits(index)), 0, SEED_LENGTH)
-    curl.squeeze(subseedTrits, 0, SEED_LENGTH)
+    const subseedPreimage = add(seed, integerValueToTrits(index))
+    const subseedTrits = new Int8Array(HASH_LENGTH)
+    const curl = new Curl729_27(HASH_LENGTH)
+    curl.absorb(subseedPreimage, 0, subseedPreimage.length)
+    curl.squeeze(subseedTrits, 0, HASH_LENGTH)
 
     return subseedTrits
 }
 
 export const key = (Curl729_27) => (subseedTrits, security) => {
-    if (subseedTrits.length !== SEED_LENGTH) {
-        throw new Error(`Illegal subseed length. Must be ${SEED_LENGTH} trits.`)
+    if (subseedTrits.length !== HASH_LENGTH) {
+        throw new Error(`Illegal subseed length. Must be ${HASH_LENGTH} trits.`)
     }
 
     if ([1, 2, 3].indexOf(security) === -1) {
         throw new Error('Illegal security level. Must be one of 1, 2 or 3.')
     }
 
-    const keyTrits = new Int8Array(security * KEY_FRAGMENT_LENGTH)
-    const curl = new Curl729_27(SEED_LENGTH)
-    curl.absorb(subseedTrits, subseedOffset, SEED_LENGTH)
+    const keyTrits = new Int8Array(security * KEY_SIGNATURE_FRAGMENT_LENGTH)
+    const curl = new Curl729_27(HASH_LENGTH)
+    curl.absorb(subseedTrits, subseedOffset, HASH_LENGTH)
     curl.squeeze(keyTrits, 0, keyTrits.length)
 
-    for (let offset = 0; offset < keyTrits.length; offset += SEED_LENGTH) {
-        curl.reset(SEED_LENGTH)
-        curl.absorb(keyTrits, offset, SEED_LENGTH)
-        curl.squeeze(keyTrits, offset, SEED_LENGTH)
+    for (let offset = 0; offset < keyTrits.length; offset += HASH_LENGTH) {
+        curl.reset(HASH_LENGTH)
+        curl.absorb(keyTrits, offset, HASH_LENGTH)
+        curl.squeeze(keyTrits, offset, HASH_LENGTH)
     }
 
     return keyTrits
 }
 
 export const digests = (Curl729_27) => (keyTrits) => {
-    if (keyTrits.length === 0 || keyTrits.length % KEY_FRAGMENT_LENGTH !== 0) {
-        throw new Error(`Illegal key length. Must be multiple of ${KEY_FRAGMENT_LENGTH}.`)
+    if (keyTrits.length === 0 || keyTrits.length % KEY_SIGNATURE_FRAGMENT_LENGTH !== 0) {
+        throw new Error(`Illegal key length. Must be multiple of ${KEY_SIGNATURE_FRAGMENT_LENGTH}.`)
     }
 
-    const security = keyTrits.length / KEY_FRAGMENT_LENGTH
-    const digestsTrits = new Int8Array(security * DIGEST_LENGTH)
+    const digestsTrits = new Int8Array((keyTrits.length / KEY_SIGNATURE_FRAGMENT_LENGTH) * HASH_LENGTH)
     const curl = new Curl729_27(0)
 
-    for (let i = 0; i < security; i++) {
-        const buffer = keyTrits.slice(i * KEY_FRAGMENT_LENGTH, (i + 1) * KEY_FRAGMENT_LENGTH)
+    for (let i = 0; i < keyTrits.length / KEY_SIGNATURE_FRAGMENT_LENGTH; i++) {
+        const buffer = keyTrits.slice(i * KEY_SIGNATURE_FRAGMENT_LENGTH, (i + 1) * KEY_SIGNATURE_FRAGMENT_LENGTH)
 
-        for (let j = 0; j < KEY_FRAGMENT_LENGTH / KEY_SEGMENT_LENGTH; j++) {
+        for (let j = 0; j < KEY_SIGNATURE_FRAGMENT_LENGTH / HASH_LENGTH; j++) {
             for (let k = 0; k < MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k++) {
-                curl.reset(KEY_SEGMENT_LENGTH)
-                curl.absorb(buffer, j * KEY_SEGMENT_LENGTH, KEY_SEGMENT_LENGTH)
-                curl.squeeze(buffer, j * KEY_SEGMENT_LENGTH, KEY_SEGMENT_LENGTH)
+                curl.reset(HASH_LENGTH)
+                curl.absorb(buffer, j * HASH_LENGTH, HASH_LENGTH)
+                curl.squeeze(buffer, j * HASH_LENGTH, HASH_LENGTH)
             }
         }
 
-        curl.reset(KEY_FRAGMENT_LENGTH)
-        curl.absorb(buffer, 0, KEY_FRAGMENT_LENGTH)
-        curl.squeeze(digestsTrits, i * DIGEST_LENGTH, DIGEST_LENGTH)
+        curl.reset(KEY_SIGNATURE_FRAGMENT_LENGTH)
+        curl.absorb(buffer, 0, KEY_SIGNATURE_FRAGMENT_LENGTH)
+        curl.squeeze(digestsTrits, i * HASH_LENGTH, HASH_LENGTH)
     }
 
     return digestsTrits
 }
 
 export const address = (Curl729_27) => (digestsTrits) => {
-    if (digestsTrits.length === 0 || digestsTrits.length % DIGEST_LENGTH !== 0) {
-        throw new Error(`Illegal digests length. Must be multiple of ${DIGEST_LENGTH}.`)
+    if (digestsTrits.length === 0 || digestsTrits.length % HASH_LENGTH !== 0) {
+        throw new Error(`Illegal digests length. Must be multiple of ${HASH_LENGTH}.`)
     }
 
-    const addressTrits = new Int8Array(ADDRESS_LENGTH)
-
+    const addressTrits = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(digestsTrits.length)
     curl.absorb(digestsTrits.slice(), 0, digestsTrits.length)
-    curl.squeeze(addressTrits, 0, ADDRESS_LENGTH)
+    curl.squeeze(addressTrits, 0, HASH_LENGTH)
 
     return addressTrits
 }
 
 export const digest = (Curl729_27) => (bundleFragment, signatureFragmentTrits) => {
-    const buffer = signatureFragmentTrits.slice(0, SIGNATURE_FRAGMENT_LENGTH)
-    const digestTrits = new Int8Array(DIGEST_LENGTH)
+    const buffer = signatureFragmentTrits.slice(0, KEY_SIGNATURE_FRAGMENT_LENGTH)
+    const digestTrits = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(0)
 
-    for (let j = 0; j < SIGNATURE_FRAGMENT_LENGTH / SIGNATURE_SEGMENT_LENGTH; j++) {
+    for (let j = 0; j < KEY_SIGNATURE_FRAGMENT_LENGTH / HASH_LENGTH; j++) {
         for (let k = bundleFragment[j] - MIN_TRYTE_VALUE; k-- > 0; ) {
-            curl.reset(SIGNATURE_SEGMENT_LENGTH)
-            sponge.absorb(buffer, j * SIGNATURE_SEGMENT_LENGTH, SIGNATURE_SEGMENT_LENGTH)
-            sponge.squeeze(buffer, j * SIGNATURE_SEGMENT_LENGTH, SIGNATURE_SEGMENT_LENGTH)
+            curl.reset(HASH_LENGTH)
+            curl.absorb(buffer, j * HASH_LENGTH, HASH_LENGTH)
+            curl.squeeze(buffer, j * HASH_LENGTH, HASH_LENGTH)
         }
     }
 
-    sponge.reset(SIGNATURE_FRAGMENT_LENGTH)
-    sponge.absorb(buffer, 0, SIGNATURE_FRAGMENT_LENGTH)
-    sponge.squeeze(digestTrits, 0, DIGEST_LENGTH)
+    curl.reset(KEY_SIGNATURE_FRAGMENT_LENGTH)
+    curl.absorb(buffer, 0, KEY_SIGNATURE_FRAGMENT_LENGTH)
+    curl.squeeze(digestTrits, 0, HASH_LENGTH)
 
     return digestTrits
 }
 
 export const signatureFragment = (Curl729_27) => (bundleFragment, keyFragment) => {
-    const signatureFragmentTrits = keyFragment.slice(0, SIGNATURE_FRAGMENT_LENGTH)
+    const signatureFragmentTrits = keyFragment.slice(0, KEY_SIGNATURE_FRAGMENT_LENGTH)
     const curl = new Curl729_27(0)
 
-    for (let j = 0; j < SIGNATURE_FRAGMENT_LENGTH / SIGNATURE_SEGMENT_LENGTH; j++) {
+    for (let j = 0; j < KEY_SIGNATURE_FRAGMENT_LENGTH / HASH_LENGTH; j++) {
         for (let k = 0; k < MAX_TRYTE_VALUE - bundleFragment[j]; k++) {
-            curl.reset(SIGNATURE_SEGMENT_LENGTH)
-            curl.absorb(signatureFragmentTrits, j * SIGNATURE_SEGMENT_LENGTH, SIGNATURE_SEGMENT_LENGTH)
-            curl.squeeze(signatureFragmentTrits, j * SIGNATURE_SEGMENT_LENGTH, SIGNATURE_SEGMENT_LENGTH)
+            curl.reset(HASH_LENGTH)
+            curl.absorb(signatureFragmentTrits, j * HASH_LENGTH, HASH_LENGTH)
+            curl.squeeze(signatureFragmentTrits, j * HASH_LENGTH, HASH_LENGTH)
         }
     }
 
     return signatureFragmentTrits
 }
 
-export function validateSignatures(expectedAddress, signatureFragments, bundleFragments) {
-    const digestsTrits = new Int8Array(signatureFragments.length * DIGEST_LENGTH)
+export const validateSignatures = (Curl729_27) => (expectedAddress, signatures, bundle) => {
+    const digestsTrits = new Int8Array(signatures.length * HASH_LENGTH)
 
-    for (let i = 0; i < signatureFragments.length; i++) {
-        const buffer = digest(bundleFragments[i % NUMBER_OF_SECURITY_LEVELS], signatureFragments[i])
+    for (let i = 0; i < signatures.length; i++) {
+        const buffer = digest(Curl729_27)(bundle[i % NUMBER_OF_SECURITY_LEVELS], signatures[i])
 
-        for (let j = 0; j < DIGEST_LENGTH; j++) {
-            digestsTrits[i * DIGEST_LENGTH + j] = buffer[j]
+        for (let j = 0; j < HASH_LENGTH; j++) {
+            digestsTrits[i * HASH_LENGTH + j] = buffer[j]
         }
     }
 
-    const actualAddress = address(digestsTrits)
+    const actualAddress = address(Curl729_27)(digestsTrits)
 
-    for (let i = 0; i < ADDRESS_LENGTH; i++) {
+    for (let i = 0; i < actualAddress.length; i++) {
         if (actualAddress[i] !== expectedAddress[i]) {
             return false
         }
@@ -202,9 +190,10 @@ export function validateSignatures(expectedAddress, signatureFragments, bundleFr
 export const bundleFragments = (bundle) => {
     const fragments = Array(NUMBER_OF_SECURITY_LEVELS).fill(new Int8Array(BUNDLE_FRAGMENT_LENGTH))
 
-    for (let i = 0, j = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-        for (let k = i * BUNDLE_FRAGMENT_LENGTH; k < (i + 1) * BUNDLE_FRAGMENT_LENGTH; j++, k++) {
-            output[i][j] = bundle[k * TRYTE_WIDTH] + bundle[k * TRYTE_WIDTH + 1] * 3 + bundle[k * TRYTE_WIDTH + 2] * 9
+    for (let i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
+        for (let j = 0, k = i * BUNDLE_FRAGMENT_LENGTH; k < (i + 1) * BUNDLE_FRAGMENT_LENGTH; j++, k++) {
+            fragments[i][j] =
+                bundle[k * TRYTE_WIDTH] + bundle[k * TRYTE_WIDTH + 1] * 3 + bundle[k * TRYTE_WIDTH + 2] * 9
         }
     }
 
@@ -218,4 +207,5 @@ export const iss = (Curl729_27) => ({
     address: address(Curl729_27),
     digest: digest(Curl729_27),
     signatureFragment: signatureFragment(Curl729_27),
+    validateSignatures: validateSignatures(Curl729_27),
 })
