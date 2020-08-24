@@ -44,12 +44,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { integerValueToTrits, bigIntegerValueToTrits, TRYTE_WIDTH } from '@web-ict/converter'
+import { integerValueToTrits, bigIntegerValueToTrits } from '@web-ict/converter'
 import {
     TRANSACTION_LENGTH,
     MESSAGE_OR_SIGNATURE_OFFSET,
     MESSAGE_OR_SIGNATURE_LENGTH,
-    BUNDLE_ESSENCE_OFFSET,
     EXTRA_DATA_DIGEST_OFFSET,
     EXTRA_DATA_DIGEST_LENGTH,
     ADDRESS_OFFSET,
@@ -65,8 +64,6 @@ import {
     BUNDLE_NONCE_OFFSET,
     BUNDLE_NONCE_END,
     BUNDLE_NONCE_LENGTH,
-    BUNDLE_ESSENCE_END,
-    BUNDLE_ESSENCE_LENGTH,
     TRUNK_TRANSACTION_OFFSET,
     TRUNK_TRANSACTION_LENGTH,
     BRANCH_TRANSACTION_OFFSET,
@@ -86,7 +83,6 @@ import {
     TAIL_FLAG_OFFSET,
     HEAD_FLAG_OFFSET,
 } from '@web-ict/transaction'
-import { BUNDLE_FRAGMENT_LENGTH } from '@web-ict/iss'
 
 export const transactionTrits = ({
     messageOrSignature,
@@ -176,15 +172,15 @@ export const transactionTrits = ({
 
 export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, tailFlag, maxNumberOfAttempts) => {
     if ([-1, 0, 1].indexOf(type) === -1) {
-        throw new Error('Illegal type. Exepcted one of -1, 0 or 1.')
+        throw new RangeError('Illegal type. Expected one of -1, 0 or 1.')
     }
 
     if ([-1, 0, 1].indexOf(headFlag) === -1) {
-        throw new Error('Illegal head. Exepcted one of -1, 0 or 1.')
+        throw new RangeError('Illegal head flag. Expected one of -1, 0 or 1.')
     }
 
     if ([-1, 0, 1].indexOf(tailFlag) === -1) {
-        throw new Error('Illegal security level. Exepcted one of -1, 0 or 1.')
+        throw new RangeError('Illegal tail flag. Expected one of -1, 0 or 1.')
     }
 
     const hash = new Int8Array(HASH_LENGTH)
@@ -202,64 +198,6 @@ export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, ta
                 break
             }
         }
-    } while (++numberOfFailedAttempts < maxNumberOfAttempts)
-
-    return numberOfFailedAttempts
-}
-
-export const essence = (transactions) => {
-    const essenceTrits = new Int8Array(transactions.length * BUNDLE_ESSENCE_LENGTH)
-
-    for (let i = 0; i < transactions.length; i++) {
-        essenceTrits.set(i * BUNDLE_ESSENCE_LENGTH, transactions[i].slice(BUNDLE_ESSENCE_OFFSET, BUNDLE_ESSENCE_END))
-    }
-
-    return essenceTrits
-}
-
-export const hammingWeight = (bundle) => {
-    let w = 0
-    for (let i = 0; i < HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS; i++) {
-        w += bundle[offset + i]
-    }
-    return w
-}
-
-export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNumberOfAttempts) => {
-    if ([1, 2, 3].indexOf(security) === -1) {
-        throw new Error('Illegal security level. Must be one of 1, 2 or 3.')
-    }
-
-    const essenceTrits = essence(transactions)
-    const bundle = new Int8Array(HASH_LENGTH)
-    const curl = new Curl729_27(essenceTrits.length)
-    let numberOfFailedAttempts = 0
-
-    do {
-        curl.absorb(essenceTrits, 0, essenceTrits.length)
-        curl.squeeze(bundle, 0, bundle.length)
-
-        let i = 1
-        while (i <= security) {
-            if (hammingWeight(bundle.subarray((i - 1) * BUNDLE_FRAGMENT_LENGTH, i * BUNDLE_FRAGMENT_LENGTH)) !== 0) {
-                break
-            }
-            i++
-        }
-
-        if (i === security) {
-            break
-        }
-
-        for (let i = 0; i < BUNDLE_NONCE_LENGTH; i++) {
-            if (++transactions[0][BUNDLE_NONCE_OFFSET + i] > 1) {
-                transactions[0][BUNDLE_NONCE_OFFSET + i] = -1
-            } else {
-                break
-            }
-        }
-
-        curl.reset(essenceTrits.length)
     } while (++numberOfFailedAttempts < maxNumberOfAttempts)
 
     return numberOfFailedAttempts

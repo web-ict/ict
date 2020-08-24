@@ -3,9 +3,12 @@ export {
     key,
     digests,
     address,
+    essence,
+    hammingWeight,
+    updateBundleNonce,
+    bundleTryteFragments,
     digest,
     signatureFragment,
     validateSignatures,
     iss,
-    bundleFragments,
 } from './src/iss.js'
