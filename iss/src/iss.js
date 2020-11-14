@@ -46,21 +46,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { add } from './add.js'
 import { integerValueToTrits, TRYTE_WIDTH } from '@web-ict/converter'
-import {
-    BUNDLE_ESSENCE_OFFSET,
-    BUNDLE_ESSENCE_END,
-    BUNDLE_ESSENCE_LENGTH,
-    BUNDLE_NONCE_OFFSET,
-    BUNDLE_NONCE_LENGTH,
-} from '@web-ict/transaction'
 
 export const MIN_TRYTE_VALUE = -13
 export const MAX_TRYTE_VALUE = 13
 export const NUMBER_OF_SECURITY_LEVELS = 3
 export const HASH_LENGTH = 243
-export const KEY_SIGNATURE_FRAGMENT_LENGTH = (HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS / TRYTE_WIDTH) * HASH_LENGTH
 export const BUNDLE_FRAGMENT_LENGTH = HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS
 export const BUNDLE_FRAGMENT_TRYTE_LENGTH = BUNDLE_FRAGMENT_LENGTH / TRYTE_WIDTH
+export const KEY_SIGNATURE_FRAGMENT_LENGTH = BUNDLE_FRAGMENT_TRYTE_LENGTH * HASH_LENGTH
+export const SECURITY_LEVEL_TRITS = [2, 0, 1, -1]
+export const SECURITY_LEVEL_OFFSET = 0
 
 export const subseed = (Curl729_27) => (seed, index) => {
     if (!Number.isInteger(index) || index < 0) {
@@ -126,14 +121,54 @@ export const digests = (Curl729_27) => (keyTrits) => {
     return digestsTrits
 }
 
-export const address = (Curl729_27) => (digestsTrits) => {
-    if (digestsTrits.length === 0 || digestsTrits.length % HASH_LENGTH !== 0) {
-        throw new RangeError(`Illegal digests length. Expected multiple of ${HASH_LENGTH}.`)
+export const address = (Curl729_27, state) => {
+    if (!Number.isInteger(state.index) || !Number.isSafeInteger(state.index) || state.index < 0) {
+        throw new RangeError('Illegal state.')
     }
 
+    return (seed, security, digestsTrits = new Int8Array(0)) => {
+        if ([1, 2, 3].indexOf(security) === -1) {
+            throw new RangeError('Illegal security level. Expected one of 1, 2 or 3.')
+        }
+
+        if (digestsTrits.length % HASH_LENGTH !== 0) {
+            throw new RangeError(`Illegal digests length. Expected multiple of ${HASH_LENGTH}.`)
+        }
+
+        const outcome = {
+            index: 0,
+            security,
+            key: new Int8Array(security * KEY_SIGNATURE_FRAGMENT_LENGTH),
+            digests: new Int8Array(digestsTrits.length + security * HASH_LENGTH),
+            address: new Int8Array(HASH_LENGTH),
+        }
+
+        const curl = new Curl729_27(outcome.digests.length)
+
+        do {
+            outcome.index = state.index++
+            outcome.key.set(key(subseed(seed, index), security))
+            outcome.digests.set(digests(outcome.key), digestsTrits.length)
+            curl.reset(outcome.digests.length)
+            curl.absorb(outcome.digests, 0, outcome.digests.length)
+            curl.squeeze(outcome.address, 0, HASH_LENGTH)
+        } while (outcome.address[SECURITY_LEVEL_OFFSET] !== SECURITY_LEVEL_TRITS[security])
+
+        if (state.addresses === undefined) {
+            state.addresses = {}
+        }
+        state.addresses.push(outcome)
+
+        return outcome
+    }
+}
+
+export const addressFromDigests = (Curl729_27) => (digestsTrits) => {
+    const digestsTrits = new Int8Array(security * HASH_LENGTH)
     const addressTrits = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(digestsTrits.length)
-    curl.absorb(digestsTrits.slice(), 0, digestsTrits.length)
+
+    curl.absorb(digestsTrits, 0, digestsTrits.length)
     curl.squeeze(addressTrits, 0, HASH_LENGTH)
 
     return addressTrits
@@ -174,19 +209,6 @@ export const signatureFragment = (Curl729_27) => (bundleTryteFragment, keyFragme
     return signatureFragmentTrits
 }
 
-export const bundleTryteFragments = (bundle) => {
-    const fragments = Array(NUMBER_OF_SECURITY_LEVELS).fill(new Int8Array(BUNDLE_FRAGMENT_TRYTE_LENGTH))
-
-    for (let i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-        for (let j = 0, k = i * BUNDLE_FRAGMENT_TRYTE_LENGTH; k < (i + 1) * BUNDLE_FRAGMENT_TRYTE_LENGTH; j++, k++) {
-            fragments[i][j] =
-                bundle[k * TRYTE_WIDTH] + bundle[k * TRYTE_WIDTH + 1] * 3 + bundle[k * TRYTE_WIDTH + 2] * 9
-        }
-    }
-
-    return fragments
-}
-
 export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFragments, bundleTryteFragments) => {
     const digestsTrits = new Int8Array(signatureFragments.length * HASH_LENGTH)
 
@@ -198,7 +220,7 @@ export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFra
         }
     }
 
-    const actualAddress = address(Curl729_27)(digestsTrits)
+    const actualAddress = addressFromDigests(Curl729_27)(digestsTrits)
 
     for (let i = 0; i < actualAddress.length; i++) {
         if (actualAddress[i] !== expectedAddress[i]) {
