@@ -79,10 +79,13 @@ import {
     TRANSACTION_NONCE_OFFSET,
     TRANSACTION_NONCE_END,
     TRANSACTION_NONCE_LENGTH,
+    HASH_LENGTH,
     TYPE_OFFSET,
     TAIL_FLAG_OFFSET,
     HEAD_FLAG_OFFSET,
 } from '@web-ict/transaction'
+
+import { NUMBER_OF_SECURITY_LEVELS } from '@web-ict/iss'
 
 export const transactionTrits = ({
     messageOrSignature,
@@ -170,7 +173,14 @@ export const transactionTrits = ({
     }
 }
 
-export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, tailFlag, maxNumberOfAttempts) => {
+export const updateTransactionNonce = (Curl729_27) => (
+    trits,
+    type,
+    headFlag,
+    tailFlag,
+    security,
+    maxNumberOfAttempts
+) => {
     if ([-1, 0, 1].indexOf(type) === -1) {
         throw new RangeError('Illegal type. Expected one of -1, 0 or 1.')
     }
@@ -189,11 +199,26 @@ export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, ta
     do {
         Curl729_27.get_digest(trits, 0, TRANSACTION_LENGTH, hash, 0)
         if (hash[TYPE_OFFSET] === type && hash[HEAD_FLAG_OFFSET] === headFlag && hash[TAIL_FLAG_OFFSET] === tailFlag) {
-            break
+            if (security) {
+                let i = 0
+                do {
+                    const w = hammingWeight(hash, (i * HASH_LENGTH) / BUNDLE_FRAGMENT_LENGTH)
+                    if (i < security ? w === 0 : w !== 0) {
+                        break
+                    }
+                } while (++i < NUMBER_OF_SECURITY_LEVELS)
+
+                if (i === NUMBER_OF_SECURITY_LEVELS) {
+                    break
+                }
+            } else {
+                break
+            }
         }
-        for (let i = 0; i < TRANSACTION_NONCE_LENGTH; i++) {
-            if (++trits[TRANSACTION_NONCE_OFFSET + i] > 1) {
-                trits[TRANSACTION_NONCE_OFFSET + i] = -1
+
+        for (let i = TRANSACTION_NONCE_OFFSET; i < TRANSACTION_NONCE_END; i++) {
+            if (++trits[i] > 1) {
+                trits[i] = -1
             } else {
                 break
             }
@@ -201,4 +226,84 @@ export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, ta
     } while (++numberOfFailedAttempts < maxNumberOfAttempts)
 
     return numberOfFailedAttempts
+}
+
+export const essence = (transactions) => {
+    const essenceTrits = new Int8Array(transactions.length * BUNDLE_ESSENCE_LENGTH)
+
+    for (let i = 0; i < transactions.length; i++) {
+        essenceTrits.set(i * BUNDLE_ESSENCE_LENGTH, transactions[i].slice(BUNDLE_ESSENCE_OFFSET, BUNDLE_ESSENCE_END))
+    }
+
+    return essenceTrits
+}
+
+export const hammingWeight = (bundle, offset) => {
+    let w = 0
+    for (let i = 0; i < BUNDLE_FRAGMENT_LENGTH; i++) {
+        w += bundle[offset + i]
+    }
+    return w
+}
+
+export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNumberOfAttempts) => {
+    if ([1, 2, 3].indexOf(security) === -1) {
+        throw new RangeError('Illegal security level. Expected one of 1, 2 or 3.')
+    }
+
+    const essenceTrits = essence(transactions)
+    const bundle = new Int8Array(HASH_LENGTH)
+    const curl = new Curl729_27(essenceTrits.length)
+    let numberOfFailedAttempts = 0
+
+    do {
+        curl.absorb(essenceTrits, 0, essenceTrits.length)
+        curl.squeeze(bundle, 0, bundle.length)
+
+        let i = 0
+        do {
+            const w = hammingWeight(bundle, i * BUNDLE_FRAGMENT_LENGTH)
+            if (i < security ? w === 0 : w !== 0) {
+                break
+            }
+        } while (++i < NUMBER_OF_SECURITY_LEVELS)
+
+        if (i === NUMBER_OF_SECURITY_LEVELS) {
+            break
+        }
+
+        for (let i = 0; i < BUNDLE_NONCE_LENGTH; i++) {
+            if (++essenceTrits[BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET + i] > 1) {
+                essenceTrits[BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET + i] = -1
+            } else {
+                break
+            }
+        }
+
+        curl.reset(essenceTrits.length)
+    } while (++numberOfFailedAttempts < maxNumberOfAttempts)
+
+    if (numberOfFailedAttempts === maxNumberOfAttempts) {
+        throw new Error(numberOfFailedAttempts)
+    }
+
+    transactions[0].set(
+        BUNDLE_NONCE_OFFSET,
+        essenceTrits.slice(BUNDLE_NONCE_OFFSET -  , BUNDLE_NONCE_END - BUNDLE_ESSENCE_OFFSET)
+    )
+
+    return { bundle, numberOfFailedAttempts }
+}
+
+export const bundleTrytes = (bundle, security = NUMBER_OF_SECURITY_LEVELS) => {
+    const trytes = new Int8Array(security * BUNDLE_FRAGMENT_TRYTE_LENGTH)
+
+    for (let i = 0; i < security; i++) {
+        for (let j = 0, k = i * BUNDLE_FRAGMENT_TRYTE_LENGTH; k < (i + 1) * BUNDLE_FRAGMENT_TRYTE_LENGTH; j++, k++) {
+            trytes[i * BUNDLE_FRAGMENT_TRYTE_LENGTH + j] =
+                bundle[k * TRYTE_WIDTH] + bundle[k * TRYTE_WIDTH + 1] * 3 + bundle[k * TRYTE_WIDTH + 2] * 9
+        }
+    }
+
+    return trytes
 }

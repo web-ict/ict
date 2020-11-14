@@ -208,67 +208,28 @@ export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFra
     return true
 }
 
-export const essence = (transactions) => {
-    const essenceTrits = new Int8Array(transactions.length * BUNDLE_ESSENCE_LENGTH)
+export const getMerkleRoot = (hash, trits, index, depth) => {
+    const curl = new Curl729_27(HASH_LENGTH)
 
-    for (let i = 0; i < transactions.length; i++) {
-        essenceTrits.set(i * BUNDLE_ESSENCE_LENGTH, transactions[i].slice(BUNDLE_ESSENCE_OFFSET, BUNDLE_ESSENCE_END))
+    for (let i = 0; i < depth; i++) {
+        curl.reset(HASH_LENGTH)
+        if ((index & 1) == 0) {
+            curl.absorb(hash, 0, HASH_LENGTH)
+            curl.absorb(trits, i * HASH_LENGTH, HASH_LENGTH)
+        } else {
+            curl.absorb(trits, i * HASH_LENGTH, HASH_LENGTH)
+            curl.absorb(hash, 0, HASH_LENGTH)
+        }
+        curl.squeeze(hash, 0, HASH_LENGTH)
+
+        index >>= 1
     }
 
-    return essenceTrits
-}
-
-export const hammingWeight = (bundle, offset) => {
-    let w = 0
-    for (let i = 0; i < BUNDLE_FRAGMENT_LENGTH; i++) {
-        w += bundle[offset + i]
-    }
-    return w
-}
-
-export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNumberOfAttempts) => {
-    if ([1, 2, 3].indexOf(security) === -1) {
-        throw new RangeError('Illegal security level. Expected one of 1, 2 or 3.')
+    if (index != 0) {
+        return NULL_HASH
     }
 
-    const essenceTrits = essence(transactions)
-    const bundle = new Int8Array(HASH_LENGTH)
-    const curl = new Curl729_27(essenceTrits.length)
-    let numberOfFailedAttempts = 0
-
-    do {
-        curl.absorb(essenceTrits, 0, essenceTrits.length)
-        curl.squeeze(bundle, 0, bundle.length)
-
-        let i = 0
-        while (i < security) {
-            if (hammingWeight(bundle, i * BUNDLE_FRAGMENT_LENGTH) !== 0) {
-                break
-            }
-            i++
-        }
-
-        if (i === security - 1) {
-            break
-        }
-
-        for (let i = 0; i < BUNDLE_NONCE_LENGTH; i++) {
-            if (++essenceTrits[BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET + i] > 1) {
-                essenceTrits[BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET + i] = -1
-            } else {
-                break
-            }
-        }
-
-        curl.reset(essenceTrits.length)
-    } while (++numberOfFailedAttempts < maxNumberOfAttempts)
-
-    transactions[0].set(
-        BUNDLE_NONCE_OFFSET,
-        essenceTrits.slice(BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET, BUNDLE_NONCE_END - BUNDLE_ESSENCE_OFFSET)
-    )
-
-    return numberOfFailedAttempts
+    return hash
 }
 
 export const iss = (Curl729_27) => ({
