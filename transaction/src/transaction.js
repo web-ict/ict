@@ -144,7 +144,7 @@ export const transaction = (Curl729_27, trits) => {
     Curl729_27.get_digest(trits, 0, TRANSACTION_LENGTH, hashTrits, 0)
     const type = hashTrits[TYPE_OFFSET]
     const headFlag = hashTrits[HEAD_FLAG_OFFSET]
-    const tailFLAG = hashTrits[TAIL_FLAG_OFFSET]
+    const tailFlag = hashTrits[TAIL_FLAG_OFFSET]
 
     // Trunk transaction of a head must be tail
     if (headFlag !== FALSE && trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] === FALSE) {
@@ -160,7 +160,7 @@ export const transaction = (Curl729_27, trits) => {
         hash: trytes(hashTrits, 0, HASH_LENGTH),
         type,
         headFlag,
-        tailFLAG,
+        tailFlag,
         messageOrSignature: trits.slice(MESSAGE_OR_SIGNATURE_OFFSET, MESSAGE_OR_SIGNATURE_END),
         extraDataDigest: trytes(trits, EXTRA_DATA_DIGEST_OFFSET, EXTRA_DATA_DIGEST_LENGTH),
         address: trytes(trits, ADDRESS_OFFSET, ADDRESS_LENGTH),
