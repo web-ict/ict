@@ -46,7 +46,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 export const NUMBER_OF_PEERS = 3
 
-export const autopeering = properties => {
+export const autopeering = (properties) => {
     const { cooldownDuration, reconnectDelay, tiebreakerValue, tiebreakerIntervalDuration } = properties
     const peers = Array(NUMBER_OF_PEERS)
     for (let i = 0; i < NUMBER_OF_PEERS; i++) {
@@ -61,14 +61,11 @@ export const autopeering = properties => {
                 return setInterval(() => {
                     peers.forEach((peer, i) => {
                         peer.rateOfNewTransactions =
-                            (peer.numberOfNewTransactions - numberOfNewTransactions[i]) /
-                            tiebreakerIntervalDuration
+                            (peer.numberOfNewTransactions - numberOfNewTransactions[i]) / tiebreakerIntervalDuration
                         numberOfNewTransactions[i] = peer.numberOfNewTransactions
                     })
 
-                    const [a, b] = peers
-                        .slice()
-                        .sort((a, b) => b.rateOfNewTransactions - a.rateOfNewTransactions)
+                    const [a, b] = peers.slice().sort((a, b) => b.rateOfNewTransactions - a.rateOfNewTransactions)
 
                     if (a.rateOfNewTransactions - b.rateOfNewTransactions >= tiebreakerValue) {
                         a.skip()
@@ -76,7 +73,7 @@ export const autopeering = properties => {
                 }, tiebreakerIntervalDuration * 1000)
             })()
 
-            const discover = peer => {
+            const discover = (peer) => {
                 Object.assign(peer, {
                     uptime: 0,
                     numberOfInboundTransactions: 0,
@@ -89,13 +86,10 @@ export const autopeering = properties => {
                 let alive = false
                 const onopen = () => {
                     peer.startTime = Date.now()
-                    heartbeat = setInterval(
-                        () => (alive ? (alive = false) : peer.skip()),
-                        cooldownDuration * 1000
-                    )
+                    heartbeat = setInterval(() => (alive ? (alive = false) : peer.skip()), cooldownDuration * 1000)
                 }
 
-                const onpacket = packet => {
+                const onpacket = (packet) => {
                     alive = true
                     peer.latestActivityTime = Date.now()
                     if (peer.startTime === undefined) {
@@ -130,10 +124,10 @@ export const autopeering = properties => {
                 })
             }
 
-            peers.forEach(peer => discover(peer))
+            peers.forEach((peer) => discover(peer))
         },
         terminate() {
-            peers.forEach(peer => peer.terminate())
+            peers.forEach((peer) => peer.terminate())
         },
     }
 }

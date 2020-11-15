@@ -47,74 +47,74 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /**
  */
 export class Curl729_27 {
-  free(): void;
-  /**
-   * @param {number} length
-   */
-  constructor(length: number);
-  /**
-   * @param {Int8Array} length_trits
-   */
-  reset(length_trits: Int8Array): void;
-  /**
-   * @param {Int8Array} message
-   * @param {number} message_offset
-   * @param {number} message_length
-   * @param {Int8Array} digest
-   * @param {number} digest_offset
-   */
-  static get_digest(
-    message: Int8Array,
-    message_offset: number,
-    message_length: number,
-    digest: Int8Array,
-    digest_offset: number
-  ): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  absorb(trits: Int8Array, offset: number, length: number): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  squeeze(trits: Int8Array, offset: number, length: number): void;
+    free(): void
+    /**
+     * @param {number} length
+     */
+    constructor(length: number)
+    /**
+     * @param {Int8Array} length_trits
+     */
+    reset(length_trits: Int8Array): void
+    /**
+     * @param {Int8Array} message
+     * @param {number} message_offset
+     * @param {number} message_length
+     * @param {Int8Array} digest
+     * @param {number} digest_offset
+     */
+    static get_digest(
+        message: Int8Array,
+        message_offset: number,
+        message_length: number,
+        digest: Int8Array,
+        digest_offset: number
+    ): void
+    /**
+     * @param {Int8Array} trits
+     * @param {number} offset
+     * @param {number} length
+     */
+    absorb(trits: Int8Array, offset: number, length: number): void
+    /**
+     * @param {Int8Array} trits
+     * @param {number} offset
+     * @param {number} length
+     */
+    squeeze(trits: Int8Array, offset: number, length: number): void
 }
 /**
  */
 export class Curl729_27_Ref {
-  free(): void;
-  /**
-   * @param {Int8Array} length_trits
-   */
-  reset(length_trits: Int8Array): void;
-  /**
-   * @param {Int8Array} message
-   * @param {number} message_offset
-   * @param {number} message_length
-   * @param {Int8Array} digest
-   * @param {number} digest_offset
-   */
-  static get_digest(
-    message: Int8Array,
-    message_offset: number,
-    message_length: number,
-    digest: Int8Array,
-    digest_offset: number
-  ): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  absorb(trits: Int8Array, offset: number, length: number): void;
-  /**
-   * @param {Int8Array} trits
-   * @param {number} offset
-   * @param {number} length
-   */
-  squeeze(trits: Int8Array, offset: number, length: number): void;
+    free(): void
+    /**
+     * @param {Int8Array} length_trits
+     */
+    reset(length_trits: Int8Array): void
+    /**
+     * @param {Int8Array} message
+     * @param {number} message_offset
+     * @param {number} message_length
+     * @param {Int8Array} digest
+     * @param {number} digest_offset
+     */
+    static get_digest(
+        message: Int8Array,
+        message_offset: number,
+        message_length: number,
+        digest: Int8Array,
+        digest_offset: number
+    ): void
+    /**
+     * @param {Int8Array} trits
+     * @param {number} offset
+     * @param {number} length
+     */
+    absorb(trits: Int8Array, offset: number, length: number): void
+    /**
+     * @param {Int8Array} trits
+     * @param {number} offset
+     * @param {number} length
+     */
+    squeeze(trits: Int8Array, offset: number, length: number): void
 }

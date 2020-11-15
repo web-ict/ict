@@ -64,6 +64,9 @@ import {
     BUNDLE_NONCE_OFFSET,
     BUNDLE_NONCE_END,
     BUNDLE_NONCE_LENGTH,
+    BUNDLE_ESSENCE_OFFSET,
+    BUNDLE_ESSENCE_END,
+    BUNDLE_ESSENCE_LENGTH,
     TRUNK_TRANSACTION_OFFSET,
     TRUNK_TRANSACTION_LENGTH,
     BRANCH_TRANSACTION_OFFSET,
@@ -85,7 +88,7 @@ import {
     HEAD_FLAG_OFFSET,
 } from '@web-ict/transaction'
 
-import { NUMBER_OF_SECURITY_LEVELS } from '@web-ict/iss'
+import { NUMBER_OF_SECURITY_LEVELS, BUNDLE_FRAGMENT_LENGTH } from '@web-ict/iss'
 
 export const transactionTrits = ({
     messageOrSignature,
@@ -289,21 +292,8 @@ export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNum
 
     transactions[0].set(
         BUNDLE_NONCE_OFFSET,
-        essenceTrits.slice(BUNDLE_NONCE_OFFSET -  , BUNDLE_NONCE_END - BUNDLE_ESSENCE_OFFSET)
+        essenceTrits.slice(BUNDLE_NONCE_OFFSET - BUNDLE_NONCE_END - BUNDLE_ESSENCE_OFFSET)
     )
 
     return { bundle, numberOfFailedAttempts }
-}
-
-export const bundleTrytes = (bundle, security = NUMBER_OF_SECURITY_LEVELS) => {
-    const trytes = new Int8Array(security * BUNDLE_FRAGMENT_TRYTE_LENGTH)
-
-    for (let i = 0; i < security; i++) {
-        for (let j = 0, k = i * BUNDLE_FRAGMENT_TRYTE_LENGTH; k < (i + 1) * BUNDLE_FRAGMENT_TRYTE_LENGTH; j++, k++) {
-            trytes[i * BUNDLE_FRAGMENT_TRYTE_LENGTH + j] =
-                bundle[k * TRYTE_WIDTH] + bundle[k * TRYTE_WIDTH + 1] * 3 + bundle[k * TRYTE_WIDTH + 2] * 9
-        }
-    }
-
-    return trytes
 }

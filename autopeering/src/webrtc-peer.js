@@ -53,7 +53,7 @@ export const WebRTC_Peer = ({ iceServers, signalingChannel }) => (onopen, onpack
 
     const onclose = () => skip()
 
-    sc = signalingChannel(signal => {
+    sc = signalingChannel((signal) => {
         const { caller, description, candidate } = signal
 
         if (caller !== undefined) {
@@ -84,7 +84,7 @@ export const WebRTC_Peer = ({ iceServers, signalingChannel }) => (onopen, onpack
                 // Caller issues SDP offer
                 pc
                     .createOffer()
-                    .then(offer => pc.setLocalDescription(offer))
+                    .then((offer) => pc.setLocalDescription(offer))
                     .then(() =>
                         sc.send({
                             description: pc.localDescription,
@@ -116,7 +116,7 @@ export const WebRTC_Peer = ({ iceServers, signalingChannel }) => (onopen, onpack
                 )
                     .then(() =>
                         // Callee anwsers SDP offer
-                        pc.createAnswer().then(answer => pc.setLocalDescription(answer))
+                        pc.createAnswer().then((answer) => pc.setLocalDescription(answer))
                     )
                     .then(() =>
                         sc.send({

@@ -47,11 +47,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 export const signalingClient = ({ signalingServers }) => {
     const urls = [signalingServers.slice(), []]
 
-    return onsignal => {
+    return (onsignal) => {
         const ws = new WebSocket(
             (([a, b]) => {
                 if (a.length === 0) {
-                    b.forEach(url => a.push(url))
+                    b.forEach((url) => a.push(url))
                     b.length = 0
                 }
                 const url = a.splice(Math.floor(Math.random() * a.length), 1)[0]
@@ -60,7 +60,7 @@ export const signalingClient = ({ signalingServers }) => {
             })(urls)
         )
 
-        const onmessage = event => {
+        const onmessage = (event) => {
             let signal
             try {
                 signal = JSON.parse(event.data)
@@ -69,11 +69,7 @@ export const signalingClient = ({ signalingServers }) => {
                 return
             }
 
-            if (
-                signal.caller !== undefined ||
-                signal.candidate !== undefined ||
-                signal.description !== undefined
-            ) {
+            if (signal.caller !== undefined || signal.candidate !== undefined || signal.description !== undefined) {
                 onsignal(signal)
             } else {
                 ws.close(3000, 'Nonsense signal.')

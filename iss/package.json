@@ -9,6 +9,7 @@
     "main": "index.js",
     "scripts": {
         "lint": "eslint ./",
+        "format": "prettier --write .",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "Chris Dukakis",
@@ -23,7 +24,6 @@
     "devDependencies": {
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
-        "eslint-plugin-prettier": "^3.1.2",
         "prettier": "^2.0.2"
     },
     "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"

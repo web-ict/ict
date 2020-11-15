@@ -82,7 +82,7 @@ export const key = (Curl729_27) => (subseedTrits, security) => {
 
     const keyTrits = new Int8Array(security * KEY_SIGNATURE_FRAGMENT_LENGTH)
     const curl = new Curl729_27(HASH_LENGTH)
-    curl.absorb(subseedTrits, subseedOffset, HASH_LENGTH)
+    curl.absorb(subseedTrits, 0, HASH_LENGTH)
     curl.squeeze(keyTrits, 0, keyTrits.length)
 
     for (let offset = 0; offset < keyTrits.length; offset += HASH_LENGTH) {
@@ -142,11 +142,12 @@ export const address = (Curl729_27, state) => {
             digests: new Int8Array(digestsTrits.length + security * HASH_LENGTH),
             address: new Int8Array(HASH_LENGTH),
         }
-
         const curl = new Curl729_27(outcome.digests.length)
 
         do {
-            outcome.index = state.index++
+            const index = state.index++
+
+            outcome.index = index
             outcome.key.set(key(subseed(seed, index), security))
             outcome.digests.set(digests(outcome.key), digestsTrits.length)
             curl.reset(outcome.digests.length)
@@ -164,7 +165,6 @@ export const address = (Curl729_27, state) => {
 }
 
 export const addressFromDigests = (Curl729_27) => (digestsTrits) => {
-    const digestsTrits = new Int8Array(security * HASH_LENGTH)
     const addressTrits = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(digestsTrits.length)
 
@@ -230,7 +230,7 @@ export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFra
     return true
 }
 
-export const getMerkleRoot = (hash, trits, index, depth) => {
+export const getMerkleRoot = (Curl729_27) => (hash, trits, index, depth) => {
     const curl = new Curl729_27(HASH_LENGTH)
 
     for (let i = 0; i < depth; i++) {
@@ -248,7 +248,7 @@ export const getMerkleRoot = (hash, trits, index, depth) => {
     }
 
     if (index != 0) {
-        return NULL_HASH
+        return new Int8Array(HASH_LENGTH)
     }
 
     return hash
@@ -259,7 +259,6 @@ export const iss = (Curl729_27) => ({
     key: key(Curl729_27),
     digests: digests(Curl729_27),
     address: address(Curl729_27),
-    updateBundleNonce: updateBundleNonce(Curl729_27),
     digest: digest(Curl729_27),
     signatureFragment: signatureFragment(Curl729_27),
     validateSignatures: validateSignatures(Curl729_27),

@@ -65,10 +65,7 @@ export const delayQueue = (A, B) => {
          * @returns {number} `timeoutID`
          */
         schedule(callback) {
-            return setTimeout(
-                callback,
-                Math.floor(Math.random() * (B - A + 1)) + A
-            )
+            return setTimeout(callback, Math.floor(Math.random() * (B - A + 1)) + A)
         },
         /**
          * Cancels callback by timeoutID

@@ -44,57 +44,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 /* tslint:disable */
 /* eslint-disable */
-export const memory: WebAssembly.Memory;
-export function __wbg_curl729_27_free(a: number): void;
-export function curl729_27_new(a: number): number;
-export function curl729_27_reset(a: number, b: number, c: number): void;
-export function curl729_27_get_digest(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-  g: number
-): void;
-export function curl729_27_absorb(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-): void;
-export function curl729_27_squeeze(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-): void;
-export function __wbg_curl729_27_ref_free(a: number): void;
-export function curl729_27_ref_reset(a: number, b: number, c: number): void;
+export const memory: WebAssembly.Memory
+export function __wbg_curl729_27_free(a: number): void
+export function curl729_27_new(a: number): number
+export function curl729_27_reset(a: number, b: number, c: number): void
+export function curl729_27_get_digest(a: number, b: number, c: number, d: number, e: number, f: number, g: number): void
+export function curl729_27_absorb(a: number, b: number, c: number, d: number, e: number): void
+export function curl729_27_squeeze(a: number, b: number, c: number, d: number, e: number): void
+export function __wbg_curl729_27_ref_free(a: number): void
+export function curl729_27_ref_reset(a: number, b: number, c: number): void
 export function curl729_27_ref_get_digest(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-  g: number
-): void;
-export function curl729_27_ref_absorb(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-): void;
-export function curl729_27_ref_squeeze(
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-): void;
-export function __wbindgen_malloc(a: number): number;
-export function __wbindgen_free(a: number, b: number): void;
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number
+): void
+export function curl729_27_ref_absorb(a: number, b: number, c: number, d: number, e: number): void
+export function curl729_27_ref_squeeze(a: number, b: number, c: number, d: number, e: number): void
+export function __wbindgen_malloc(a: number): number
+export function __wbindgen_free(a: number, b: number): void

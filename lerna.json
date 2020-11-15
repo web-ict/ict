@@ -1,22 +1,15 @@
 {
-  "version": "0.0.0-beta.2",
-  "npmClient": "npm",
-  "command": {
-    "publish": {
-      "ignoreChanges": [
-        "ignored-file",
-        "*.md"
-      ],
-      "message": "chore(release): publish",
-      "registry": "https://npm.pkg.github.com"
+    "version": "0.0.0-beta.2",
+    "npmClient": "npm",
+    "command": {
+        "publish": {
+            "ignoreChanges": ["ignored-file", "*.md"],
+            "message": "chore(release): publish",
+            "registry": "https://npm.pkg.github.com"
+        },
+        "bootstrap": {
+            "npmClientArgs": ["--no-package-lock"]
+        }
     },
-    "bootstrap": {
-      "npmClientArgs": [
-        "--no-package-lock"
-      ]
-    }
-  },
-  "packages": [
-    "*"
-  ]
+    "packages": ["*"]
 }
