@@ -151,13 +151,14 @@ export const address = (Curl729_27, state) => {
             outcome.key.set(key(subseed(seed, index), security))
             outcome.digests.set(digestsTrits)
             outcome.digests.set(digests(outcome.key), digestsTrits.length)
+
             curl.reset(outcome.digests.length)
             curl.absorb(outcome.digests, 0, outcome.digests.length)
             curl.squeeze(outcome.address, 0, HASH_LENGTH)
         } while (outcome.address[SECURITY_LEVEL_OFFSET] !== SECURITY_LEVEL_TRITS[security])
 
         if (state.addresses === undefined) {
-            state.addresses = {}
+            state.addresses = []
         }
         state.addresses.push(outcome)
 
