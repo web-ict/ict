@@ -260,11 +260,11 @@ export const getMerkleRoot = (Curl729_27) => (hash, trits, index, depth) => {
     return hash
 }
 
-export const iss = (Curl729_27) => ({
+export const iss = (Curl729_27, state) => ({
     subseed: subseed(Curl729_27),
     key: key(Curl729_27),
     digests: digests(Curl729_27),
-    address: address(Curl729_27),
+    address: address(Curl729_27, state),
     digest: digest(Curl729_27),
     signatureFragment: signatureFragment(Curl729_27),
     validateSignatures: validateSignatures(Curl729_27),
