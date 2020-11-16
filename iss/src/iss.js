@@ -149,6 +149,7 @@ export const address = (Curl729_27, state) => {
 
             outcome.index = index
             outcome.key.set(key(subseed(seed, index), security))
+            outcome.digests.set(digestsTrits)
             outcome.digests.set(digests(outcome.key), digestsTrits.length)
             curl.reset(outcome.digests.length)
             curl.absorb(outcome.digests, 0, outcome.digests.length)
