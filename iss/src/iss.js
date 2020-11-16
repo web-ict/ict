@@ -52,8 +52,7 @@ export const MAX_TRYTE_VALUE = 13
 export const NUMBER_OF_SECURITY_LEVELS = 3
 export const HASH_LENGTH = 243
 export const BUNDLE_FRAGMENT_LENGTH = HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS
-export const BUNDLE_FRAGMENT_TRYTE_LENGTH = BUNDLE_FRAGMENT_LENGTH / TRYTE_WIDTH
-export const KEY_SIGNATURE_FRAGMENT_LENGTH = BUNDLE_FRAGMENT_TRYTE_LENGTH * HASH_LENGTH
+export const KEY_SIGNATURE_FRAGMENT_LENGTH = (BUNDLE_FRAGMENT_LENGTH / TRYTE_WIDTH) * HASH_LENGTH
 export const SECURITY_LEVEL_TRITS = [2, 0, 1, -1]
 export const SECURITY_LEVEL_OFFSET = 0
 
@@ -175,13 +174,13 @@ export const addressFromDigests = (Curl729_27) => (digestsTrits) => {
     return addressTrits
 }
 
-export const digest = (Curl729_27) => (bundleTryteFragment, signatureFragmentTrits) => {
+export const digest = (Curl729_27) => (bundle, signatureFragmentTrits) => {
     const buffer = signatureFragmentTrits.slice(0, KEY_SIGNATURE_FRAGMENT_LENGTH)
     const digestTrits = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(0)
 
     for (let j = 0; j < KEY_SIGNATURE_FRAGMENT_LENGTH / HASH_LENGTH; j++) {
-        for (let k = bundleTryteFragment[j] - MIN_TRYTE_VALUE; k-- > 0; ) {
+        for (let k = bundle[j] + bundle[j + 1] * 3 + bundle[j + 2] * 9 - MIN_TRYTE_VALUE; k-- > 0; ) {
             curl.reset(HASH_LENGTH)
             curl.absorb(buffer, j * HASH_LENGTH, HASH_LENGTH)
             curl.squeeze(buffer, j * HASH_LENGTH, HASH_LENGTH)
@@ -195,12 +194,12 @@ export const digest = (Curl729_27) => (bundleTryteFragment, signatureFragmentTri
     return digestTrits
 }
 
-export const signatureFragment = (Curl729_27) => (bundleTryteFragment, keyFragment) => {
+export const signatureFragment = (Curl729_27) => (bundle, keyFragment) => {
     const signatureFragmentTrits = keyFragment.slice(0, KEY_SIGNATURE_FRAGMENT_LENGTH)
     const curl = new Curl729_27(0)
 
     for (let j = 0; j < KEY_SIGNATURE_FRAGMENT_LENGTH / HASH_LENGTH; j++) {
-        for (let k = 0; k < MAX_TRYTE_VALUE - bundleTryteFragment[j]; k++) {
+        for (let k = 0; k < MAX_TRYTE_VALUE - (bundle[j] + bundle[j + 1] * 3 + bundle[j + 2] * 9); k++) {
             curl.reset(HASH_LENGTH)
             curl.absorb(signatureFragmentTrits, j * HASH_LENGTH, HASH_LENGTH)
             curl.squeeze(signatureFragmentTrits, j * HASH_LENGTH, HASH_LENGTH)
@@ -210,11 +209,17 @@ export const signatureFragment = (Curl729_27) => (bundleTryteFragment, keyFragme
     return signatureFragmentTrits
 }
 
-export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFragments, bundleTryteFragments) => {
+export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFragments, bundle) => {
     const digestsTrits = new Int8Array(signatureFragments.length * HASH_LENGTH)
 
     for (let i = 0; i < signatureFragments.length; i++) {
-        const buffer = digest(Curl729_27)(bundleTryteFragments[i % NUMBER_OF_SECURITY_LEVELS], signatureFragments[i])
+        const buffer = digest(Curl729_27)(
+            bundle.slice(
+                (i % NUMBER_OF_SECURITY_LEVELS) * BUNDLE_FRAGMENT_LENGTH,
+                ((i % NUMBER_OF_SECURITY_LEVELS) + 1) * BUNDLE_FRAGMENT_LENGTH
+            ),
+            signatureFragments[i]
+        )
 
         for (let j = 0; j < HASH_LENGTH; j++) {
             digestsTrits[i * HASH_LENGTH + j] = buffer[j]
