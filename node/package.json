@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/node",
-    "version": "0.0.0-beta.6",
+    "version": "0.0.0-beta.7",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -18,11 +18,11 @@
         "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
-        "@web-ict/autopeering": "^0.0.0-beta.6",
-        "@web-ict/converter": "^0.0.0-beta.6",
-        "@web-ict/dissemination": "^0.0.0-beta.6",
-        "@web-ict/tangle": "^0.0.0-beta.6",
-        "@web-ict/transaction": "^0.0.0-beta.6"
+        "@web-ict/autopeering": "^0.0.0-beta.7",
+        "@web-ict/converter": "^0.0.0-beta.7",
+        "@web-ict/dissemination": "^0.0.0-beta.7",
+        "@web-ict/tangle": "^0.0.0-beta.7",
+        "@web-ict/transaction": "^0.0.0-beta.7"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
