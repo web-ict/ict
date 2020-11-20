@@ -53,7 +53,7 @@ const NULL_TAG_TRYTES = trytes(NULL_TAG)
 const vertex = (hash, index) => ({
     hash,
     index,
-    branchVerter: undefined,
+    branchVertex: undefined,
     trunkVertex: undefined,
     referrers: new Set(),
 })
