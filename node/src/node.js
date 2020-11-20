@@ -18,11 +18,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { autopeering } from '../../autopeering'
-import { dissemination } from '../../dissemination'
-import { tangle } from '../../tangle'
-import { transaction, TRANSACTION_LENGTH, HASH_LENGTH } from '../../transaction'
-import { sizeInBytes, lengthInTrits, bytesToTrits, tritsToBytes, FALSE, UNKNOWN } from '../../converter'
+import { autopeering } from '@web-ict/autopeering'
+import { dissemination } from '@web-ict/dissemination'
+import { tangle } from '@web-ict/tangle'
+import { transaction, TRANSACTION_LENGTH, HASH_LENGTH } from '@web-ict/transaction'
+import { sizeInBytes, lengthInTrits, bytesToTrits, tritsToBytes, FALSE, UNKNOWN } from '@web-ict/converter'
 
 export const node = function (properties) {
     const { Curl729_27 } = properties

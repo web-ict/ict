@@ -1,23 +1,19 @@
 {
-    "name": "@web-ict/curl",
-    "version": "0.0.0-beta.2",
-    "publishConfig": {
-        "access": "public"
-    },
-    "contributors": [
-        "Chris Dukakis <chrisdukakis@gmail.com>"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/web-ict/ict"
-    },
-    "files": [
-        "curl_bg.wasm",
-        "curl.js",
-        "curl.d.ts"
-    ],
-    "module": "curl.js",
-    "types": "curl.d.ts",
-    "sideEffects": false,
-    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
+  "name": "@web-ict/curl",
+  "version": "0.0.0-beta.6",
+  "publishConfig": {
+    "access": "public"
+  },
+  "contributors": [
+    "Chris Dukakis <chrisdukakis@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/web-ict/ict",
+    "directory": "curl"
+  },
+  "main": "./nodejs/curl.js",
+  "module": "./bundler/curl.js",
+  "sideEffects": false,
+  "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
 }

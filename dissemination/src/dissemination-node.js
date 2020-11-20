@@ -42,79 +42,36 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* tslint:disable */
-/* eslint-disable */
-/**
- */
-export class Curl729_27 {
-    free(): void
-    /**
-     * @param {number} length
-     */
-    constructor(length: number)
-    /**
-     * @param {Int8Array} length_trits
-     */
-    reset(length_trits: Int8Array): void
-    /**
-     * @param {Int8Array} message
-     * @param {number} message_offset
-     * @param {number} message_length
-     * @param {Int8Array} digest
-     * @param {number} digest_offset
-     */
-    static get_digest(
-        message: Int8Array,
-        message_offset: number,
-        message_length: number,
-        digest: Int8Array,
-        digest_offset: number
-    ): void
-    /**
-     * @param {Int8Array} trits
-     * @param {number} offset
-     * @param {number} length
-     */
-    absorb(trits: Int8Array, offset: number, length: number): void
-    /**
-     * @param {Int8Array} trits
-     * @param {number} offset
-     * @param {number} length
-     */
-    squeeze(trits: Int8Array, offset: number, length: number): void
-}
-/**
- */
-export class Curl729_27_Ref {
-    free(): void
-    /**
-     * @param {Int8Array} length_trits
-     */
-    reset(length_trits: Int8Array): void
-    /**
-     * @param {Int8Array} message
-     * @param {number} message_offset
-     * @param {number} message_length
-     * @param {Int8Array} digest
-     * @param {number} digest_offset
-     */
-    static get_digest(
-        message: Int8Array,
-        message_offset: number,
-        message_length: number,
-        digest: Int8Array,
-        digest_offset: number
-    ): void
-    /**
-     * @param {Int8Array} trits
-     * @param {number} offset
-     * @param {number} length
-     */
-    absorb(trits: Int8Array, offset: number, length: number): void
-    /**
-     * @param {Int8Array} trits
-     * @param {number} offset
-     * @param {number} length
-     */
-    squeeze(trits: Int8Array, offset: number, length: number): void
+'use strict'
+
+import { delayQueue } from './delay-queue.js'
+import { UNKNOWN } from '@web-ict/converter'
+
+export const dissemination = function ({ A, B }) {
+    const indexedTimers = new Map()
+    const queue = delayQueue(A, B)
+    let f
+
+    return {
+        launch(send) {
+            f = send
+        },
+        terminate() {},
+        postMessage(i, m) {
+            if (i > UNKNOWN /* new tx */) {
+                indexedTimers.set(
+                    i,
+                    queue.schedule(() => {
+                        f(m)
+                        indexedTimers.delete(i)
+                    })
+                )
+            } /* seen tx */ else {
+                const abs = Math.abs(i)
+                queue.cancel(indexedTimers.get(abs))
+                indexedTimers.delete(abs)
+            }
+        },
+        info: () => indexedTimers.size,
+    }
 }

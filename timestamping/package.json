@@ -1,13 +1,12 @@
 {
-    "name": "@web-ict/dissemination",
+    "name": "@web-ict/timestamping",
     "version": "0.0.0-beta.6",
-    "description": "Message dissemination",
+    "description": "",
     "publishConfig": {
         "access": "public"
     },
-    "browser": "browser.js",
-    "main": "index.js",
     "type": "module",
+    "main": "index.js",
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",
@@ -17,15 +16,16 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/web-ict/ict",
-        "directory": "dissemination"
-    },
-    "dependencies": {
-        "@web-ict/converter": "^0.0.0-beta.6"
+        "directory": "timestamping"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
         "prettier": "^2.0.2"
     },
-    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
+    "dependencies": {
+        "@web-ict/converter": "^0.0.0-beta.6",
+        "@web-ict/curl": "^0.0.0-beta.6",
+        "@web-ict/transaction": "^0.0.0-beta.6"
+    }
 }

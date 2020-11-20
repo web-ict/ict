@@ -42,27 +42,63 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* tslint:disable */
-/* eslint-disable */
-export const memory: WebAssembly.Memory
-export function __wbg_curl729_27_free(a: number): void
-export function curl729_27_new(a: number): number
-export function curl729_27_reset(a: number, b: number, c: number): void
-export function curl729_27_get_digest(a: number, b: number, c: number, d: number, e: number, f: number, g: number): void
-export function curl729_27_absorb(a: number, b: number, c: number, d: number, e: number): void
-export function curl729_27_squeeze(a: number, b: number, c: number, d: number, e: number): void
-export function __wbg_curl729_27_ref_free(a: number): void
-export function curl729_27_ref_reset(a: number, b: number, c: number): void
-export function curl729_27_ref_get_digest(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number,
-    g: number
-): void
-export function curl729_27_ref_absorb(a: number, b: number, c: number, d: number, e: number): void
-export function curl729_27_ref_squeeze(a: number, b: number, c: number, d: number, e: number): void
-export function __wbindgen_malloc(a: number): number
-export function __wbindgen_free(a: number, b: number): void
+'use strict'
+
+import { hashChain } from './hashchain.js'
+import { TIMESTAMP_LENGTH } from './timestamper.js'
+import { trytes } from '@web-ict/converter'
+import WebSocket from 'ws'
+
+export const timestampingServer = ({ Curl729_27, seed, length, timestampIndex, host, port, user, password }) => {
+    if (!Number.isInteger(length) || length <= 0) {
+        throw new Error('Illegal length.')
+    }
+
+    const j = timestampIndex
+    if (!(j === 0 || j === 1 || j === 2)) {
+        throw new Error('Illegal index: j.')
+    }
+
+    const buffer = hashChain(Curl729_27)(seed, length, TIMESTAMP_LENGTH)
+    const server = new WebSocket.Server({ host, port })
+
+    const onmessage = (socket) => (data) => {
+        try {
+            const { i } = JSON.parse(data)
+            socket.send(
+                JSON.stringify({
+                    timestamp: trytes(buffer, i * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH),
+                    i,
+                    j,
+                })
+            )
+        } catch ({ message }) {
+            socket.close(3000, message)
+        }
+    }
+
+    const onconnection = (socket, req) => {
+        if (req.headers.authorization && user && password) {
+            const [userB, passwordB] = new Buffer(req.headers.authorization.split(' ')[1], 'base64')
+                .toString()
+                .split(':')
+            if (user !== userB || password !== passwordB) {
+                socket.close(3001, 'Unauthorized.')
+                return
+            }
+        }
+
+        socket.on('message', onmessage(socket))
+    }
+
+    server.on('connection', onconnection)
+
+    return {
+        getHash(i = 0) {
+            return buffer.slice(i * TIMESTAMP_LENGTH, (i + 1) * TIMESTAMP_LENGTH)
+        },
+        close(callback) {
+            server.close(callback)
+        },
+    }
+}

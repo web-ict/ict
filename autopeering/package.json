@@ -1,15 +1,15 @@
 {
     "name": "@web-ict/autopeering",
-    "version": "0.0.0-beta.2",
+    "version": "0.0.0-beta.6",
     "description": "Autopeering of WebRTC-enabled ict nodes.",
     "publishConfig": {
         "access": "public"
     },
+    "browser": "browser.js",
     "main": "index.js",
     "type": "module",
-    "browser": "browser.js",
     "scripts": {
-        "start": "node ./examples/server.js",
+        "start": "node ./examples/signaling-server.js",
         "lint": "eslint ./",
         "format": "prettier --write .",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,7 +20,7 @@
         "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
-        "@web-ict/dissemination": "^0.0.0-beta.2",
+        "@web-ict/dissemination": "^0.0.0-beta.6",
         "ws": "^7.2.1"
     },
     "devDependencies": {

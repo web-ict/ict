@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/test",
-    "version": "0.0.0-beta.2",
+    "version": "0.0.0-beta.6",
     "description": "Webpage to test autopeering on broswsers of different people",
     "scripts": {
         "dev": "webpack-dev-server",
@@ -14,11 +14,11 @@
         "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
-        "@web-ict/autopeering": "^0.0.0-beta.2",
-        "@web-ict/converter": "^0.0.0-beta.2",
-        "@web-ict/curl": "^0.0.0-beta.2",
-        "@web-ict/node": "^0.0.0-beta.2",
-        "@web-ict/transaction": "^0.0.0-beta.2"
+        "@web-ict/autopeering": "^0.0.0-beta.6",
+        "@web-ict/converter": "^0.0.0-beta.6",
+        "@web-ict/curl": "^0.0.0-beta.6",
+        "@web-ict/node": "^0.0.0-beta.6",
+        "@web-ict/transaction": "^0.0.0-beta.6"
     },
     "devDependencies": {
         "@babel/core": "^7.9.6",

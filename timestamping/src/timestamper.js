@@ -44,54 +44,102 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { signalingServer } from '../index.js'
-import util from 'util'
+import { MESSAGE_OR_SIGNATURE_END } from '@web-ict/transaction'
+import { integerValueToTrits, trytesToTrits } from '@web-ict/converter'
+import WebSocket from 'ws'
+import url from 'url'
 
-const version = '0.1.0'
+export const TIMESTAMP_LENGTH = 81
+export const TIMESTAMP_OFFSET = MESSAGE_OR_SIGNATURE_END - 3 * TIMESTAMP_LENGTH
 
-const log = (message = '') => process.stdout.write(util.format(message) + '\n')
-const logError = (message) => process.stderr.write(util.format(message) + '\n')
+export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, retryIntervalDuration }) => {
+    const sockets = new Array(3)
+    const requests = new Map()
+    let timestampValue = 0
+    let running = true
 
-const server = signalingServer({
-    host: 'localhost',
-    port: 3030,
-    // Wait `T`ms, in case buffer is empty (none is already waiting).
-    // `T` is a uniformly random value between `minDelay` (inclusive) and
-    // `maxDelay` (inclusive).
-    minDelay: 1,
-    maxDelay: 1000,
-    // Closes connections that stay innactive for at least `heartbeatDelay`ms.
-    // Choose this carefully depending on how many connections you can handle.
-    heartbeatDelay: 60 * 60 * 1000,
-})
+    const onmessage = (socket) => (event) => {
+        try {
+            const { timestamp, i, j } = JSON.parse(event.data)
+            const request = requests.get(i)
 
-let totalConnections = 0
+            if (request !== undefined) {
+                const { timestamps, retryInterval, resolve } = request
 
-server.on('listening', function () {
-    const { address, port } = this.address()
-    log(`Peermatcher v${version} started listening on ws://${address}:${port}...`)
-})
+                if (timestamps.filter((timestamp) => timestamp !== undefined).length === 2) {
+                    requests.delete(i)
+                    clearInterval(retryInterval)
+                    resolve(timestamps)
+                } else {
+                    timestamps[j] = timestamp
+                }
+            }
+        } catch ({ message }) {
+            socket.close(3000, message)
+        }
+    }
 
-server.on('connection', function () {
-    const { address, port } = this.address()
-    log(`connection #${++totalConnections} on ${address}:${port}`)
-})
+    const connect = (server, i) => {
+        const { username, password } = new URL(server)
+        const socket = (sockets[i] = new WebSocket(url.format(new URL(server), { auth: false }), {
+            perMessageDeflate: false,
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+            },
+        }))
 
-server.on('error', (error) => logError(`Server error: ${error.message}`))
+        socket.ready = new Promise(
+            (resolve) =>
+                (socket.onopen = () => {
+                    resolve()
+                })
+        )
 
-server.on('close', () => log(`Peermatcher v${version} stopped listenning.`))
+        socket.onmessage = onmessage(socket)
 
-const shutdown = () => {
-    log(`Shutting down Peermatcher v${version}...`)
-    server.close(() => {
-        log('Done.')
-        process.exit()
-    })
+        socket.onclose = () => {
+            if (running) {
+                setTimeout(() => connect(server, i), reconnectTimeoutDuration)
+            }
+        }
+
+        socket.onerror = () => {
+            socket.close()
+        }
+    }
+
+    const send = (i) => sockets.forEach((socket) => socket.ready.then(() => socket.send(JSON.stringify({ i }))))
+
+    const retry = (i) => () => send(i)
+
+    const request = (i) =>
+        new Promise((resolve) => {
+            requests.set(i, {
+                timestamps: Array(3),
+                retryInterval: setInterval(retry(i), retryIntervalDuration),
+                resolve,
+            })
+            send(i)
+        })
+
+    timestampingServers.forEach(connect)
+
+    return {
+        close() {
+            running = false
+            sockets.forEach((socket) => socket.close())
+        },
+        timestamp(trits) {
+            const i = timestampValue
+            timestampValue++
+
+            return request(i).then((timestamps) => {
+                timestamps.forEach((timestamp, j) =>
+                    timestamp === undefined
+                        ? integerValueToTrits(i, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                        : trytesToTrits(timestamp, trits, TIMESTAMP_OFFSET + j * TIMESTAMP_LENGTH, TIMESTAMP_LENGTH)
+                )
+            })
+        },
+    }
 }
-
-process.on('SIGTERM', shutdown)
-
-process.on('SIGINT', () => {
-    log()
-    shutdown()
-})
