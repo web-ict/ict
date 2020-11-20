@@ -45,14 +45,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import { add } from './add.js'
-import { integerValueToTrits, TRYTE_WIDTH } from '@web-ict/converter'
+import { integerValueToTrits, TRITS_PER_TRYTE, MIN_TRYTE_VALUE, MAX_TRYTE_VALUE } from '@web-ict/converter'
 
-export const MIN_TRYTE_VALUE = -13
-export const MAX_TRYTE_VALUE = 13
+const HASH_LENGTH = 243
+
 export const NUMBER_OF_SECURITY_LEVELS = 3
-export const HASH_LENGTH = 243
 export const BUNDLE_FRAGMENT_LENGTH = HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS
-export const KEY_SIGNATURE_FRAGMENT_LENGTH = (BUNDLE_FRAGMENT_LENGTH / TRYTE_WIDTH) * HASH_LENGTH
+export const KEY_SIGNATURE_FRAGMENT_LENGTH = (BUNDLE_FRAGMENT_LENGTH / TRITS_PER_TRYTE) * HASH_LENGTH
 export const SECURITY_LEVEL_TRITS = [2, 0, 1, -1]
 export const SECURITY_LEVEL_OFFSET = 0
 
