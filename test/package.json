@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/test",
-    "version": "0.0.0-beta.7",
+    "version": "0.0.0-beta.8",
     "description": "Webpage to test autopeering on broswsers of different people",
     "scripts": {
         "dev": "webpack-dev-server",
@@ -17,7 +17,7 @@
         "@web-ict/autopeering": "^0.0.0-beta.7",
         "@web-ict/converter": "^0.0.0-beta.7",
         "@web-ict/curl": "^0.0.0-beta.7",
-        "@web-ict/node": "^0.0.0-beta.7",
+        "@web-ict/node": "^0.0.0-beta.8",
         "@web-ict/transaction": "^0.0.0-beta.7"
     },
     "devDependencies": {

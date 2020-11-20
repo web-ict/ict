@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/node",
-    "version": "0.0.0-beta.7",
+    "version": "0.0.0-beta.8",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -21,7 +21,7 @@
         "@web-ict/autopeering": "^0.0.0-beta.7",
         "@web-ict/converter": "^0.0.0-beta.7",
         "@web-ict/dissemination": "^0.0.0-beta.7",
-        "@web-ict/tangle": "^0.0.0-beta.7",
+        "@web-ict/tangle": "^0.0.0-beta.8",
         "@web-ict/transaction": "^0.0.0-beta.7"
     },
     "devDependencies": {
