@@ -46,15 +46,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import * as bigInt from 'big-integer'
 
-const RADIX = 3
-const MAX_TRIT_VALUE = (RADIX - 1) / 2
-const MIN_TRIT_VALUE = -MAX_TRIT_VALUE
-const TRITS_PER_TRYTE = MAX_TRIT_VALUE - MIN_TRIT_VALUE + 1
-const BYTES_PER_ELEMENT = 2
-const TRITS_PER_ELEMENT = 9
+export const RADIX = 3
+export const MAX_TRIT_VALUE = (RADIX - 1) / 2
+export const MIN_TRIT_VALUE = -MAX_TRIT_VALUE
+export const TRITS_PER_TRYTE = MAX_TRIT_VALUE - MIN_TRIT_VALUE + 1
+export const BYTES_PER_ELEMENT = 2
+export const TRITS_PER_ELEMENT = 9
 
-const TRYTES = '9ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const TRYTES_TRITS = [
+export const TRYTES = '9ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+export const TRYTES_TRITS = [
     [0, 0, 0],
     [1, 0, 0],
     [-1, 1, 0],
@@ -198,10 +198,6 @@ export const bytesToTrits = (buffer, bytesOffset, bytesLength, trits, tritsOffse
     } while ((bytesLength -= BYTES_PER_ELEMENT) > 0)
 }
 
-export function sizeInBytes(length) {
-    return (length / TRITS_PER_ELEMENT) * BYTES_PER_ELEMENT
-}
+export const sizeInBytes = (length) => (length / TRITS_PER_ELEMENT) * BYTES_PER_ELEMENT
 
-export function lengthInTrits(size) {
-    return (size / BYTES_PER_ELEMENT) * TRITS_PER_ELEMENT
-}
+export const lengthInTrits = (size) => (size / BYTES_PER_ELEMENT) * TRITS_PER_ELEMENT

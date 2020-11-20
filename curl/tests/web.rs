@@ -42,37 +42,56 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-'use strict'
+extern crate wasm_bindgen_test;
+extern crate web_sys;
+extern crate curl;
+use curl::*;
+use wasm_bindgen_test::*;
+use wasm_bindgen_test::wasm_bindgen_test_configure;
 
-/**
- * @param {number} A >= 1
- * @param {number} B >= A
- * @throws {RangeError}
- */
-export const delayQueue = (A, B) => {
-    if (B < A) {
-        throw new RangeError('B is less than A.')
-    }
-    if (A < 1) {
-        throw new RangeError('A is less than 1.')
+wasm_bindgen_test_configure!(run_in_browser);
+
+#[wasm_bindgen_test]
+fn curl729_27_get_digest_test() {
+
+    const TRANSACTION_LENGTH: usize = 243;
+
+    const MESSAGE: [i8; TRANSACTION_LENGTH] = [0; TRANSACTION_LENGTH];
+    let mut digest = [0; HASH_LENGTH];
+
+
+    let mut expected: [i8; HASH_LENGTH] = [0; HASH_LENGTH];
+    for i in (0..HASH_LENGTH).step_by(3) {
+        expected[i] = 0;
+        expected[i + 1] = 0;
+        expected[i + 2] = 0;
     }
 
-    return {
-        /**
-         * Schedules `callback` after a random delay of `t` milliseconds.
-         * `t` is uniformly random value between `A` (inclusive) and `B` (inclusive).
-         * @param {function} callback
-         * @returns {number} `timeoutID`
-         */
-        schedule(callback) {
-            return setTimeout(callback, Math.floor(Math.random() * (B - A + 1)) + A)
-        },
-        /**
-         * Cancels callback by timeoutID
-         * @param {function} timeoutID
-         */
-        cancel(timeoutID) {
-            clearTimeout(timeoutID)
-        },
+    let mut count = 0;
+    let t0 =     web_sys::window()
+        .expect("should have a Window")
+        .performance()
+        .expect("should have a Performance")
+        .now();
+    while count < 10_000 {
+        Curl729_27_Ref::get_digest(
+            &MESSAGE,
+            0,
+            TRANSACTION_LENGTH,
+            &mut digest,
+            0
+        );
+        count +=1
     }
+
+    assert_eq!(0.0,     web_sys::window()
+        .expect("should have a Window")
+        .performance()
+        .expect("should have a Performance")
+        .now() - t0);
+
+    for i in 0..HASH_LENGTH {
+        assert_eq!(digest[i], expected[i])
+    }
+
 }

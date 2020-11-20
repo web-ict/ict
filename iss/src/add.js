@@ -1,4 +1,8 @@
 /*
+copyright Paul Handy, 2017
+
+
+
 Permission is hereby granted, perpetual, worldwide, non-exclusive, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 
@@ -42,37 +46,64 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-'use strict'
+function sum(a, b) {
+    const s = a + b
 
-/**
- * @param {number} A >= 1
- * @param {number} B >= A
- * @throws {RangeError}
- */
-export const delayQueue = (A, B) => {
-    if (B < A) {
-        throw new RangeError('B is less than A.')
+    switch (s) {
+        case 2:
+            return -1
+        case -2:
+            return 1
+        default:
+            return s
     }
-    if (A < 1) {
-        throw new RangeError('A is less than 1.')
+}
+
+function cons(a, b) {
+    if (a === b) {
+        return a
     }
 
-    return {
-        /**
-         * Schedules `callback` after a random delay of `t` milliseconds.
-         * `t` is uniformly random value between `A` (inclusive) and `B` (inclusive).
-         * @param {function} callback
-         * @returns {number} `timeoutID`
-         */
-        schedule(callback) {
-            return setTimeout(callback, Math.floor(Math.random() * (B - A + 1)) + A)
-        },
-        /**
-         * Cancels callback by timeoutID
-         * @param {function} timeoutID
-         */
-        cancel(timeoutID) {
-            clearTimeout(timeoutID)
-        },
+    return 0
+}
+
+function any(a, b) {
+    const s = a + b
+
+    if (s > 0) {
+        return 1
+    } else if (s < 0) {
+        return -1
     }
+
+    return 0
+}
+
+function full_add(a, b, c) {
+    const s_a = sum(a, b)
+    const c_a = cons(a, b)
+    const c_b = cons(s_a, c)
+    const c_out = any(c_a, c_b)
+    const s_out = sum(s_a, c)
+
+    return [s_out, c_out]
+}
+
+export function add(a, b) {
+    const out = new Int8Array(Math.max(a.length, b.length))
+    let carry = 0
+    let a_i
+    let b_i
+
+    for (let i = 0; i < out.length; i++) {
+        a_i = i < a.length ? a[i] : 0
+        b_i = i < b.length ? b[i] : 0
+
+        const f_a = full_add(a_i, b_i, carry)
+
+        out[i] = f_a[0]
+        carry = f_a[1]
+    }
+
+    return out
 }

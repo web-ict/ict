@@ -1,4 +1,15 @@
 export {
+    RADIX,
+    MAX_TRYTE_VALUE,
+    MIN_TRYTE_VALUE,
+    TRITS_PER_TRYTE,
+    BYTES_PER_ELEMENT,
+    TRITS_PER_ELEMENT,
+    TRYTES,
+    TRYTES_TRITS,
+    UNKNOWN,
+    TRUE,
+    FALSE,
     trytesToTrits,
     trytes,
     integerValueToTrits,
@@ -9,7 +20,4 @@ export {
     tritsToBytes,
     lengthInTrits,
     sizeInBytes,
-    UNKNOWN,
-    TRUE,
-    FALSE,
 } from './src/converter.js'

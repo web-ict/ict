@@ -1,13 +1,12 @@
 {
-    "name": "@web-ict/dissemination",
-    "version": "0.0.0-beta.6",
-    "description": "Message dissemination",
+    "name": "@web-ict/bundle",
+    "version": "0.0.0-beta.2",
+    "description": "",
     "publishConfig": {
         "access": "public"
     },
-    "browser": "browser.js",
-    "main": "index.js",
     "type": "module",
+    "main": "index.js",
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",
@@ -17,10 +16,11 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/web-ict/ict",
-        "directory": "dissemination"
+        "directory": "bundle"
     },
     "dependencies": {
-        "@web-ict/converter": "^0.0.0-beta.6"
+        "@web-ict/converter": "^0.0.0-beta.2",
+        "@web-ict/transaction": "^0.0.0-beta.2"
     },
     "devDependencies": {
         "eslint": "^6.8.0",

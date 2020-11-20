@@ -1,16 +1,33 @@
 {
-  "name": "root",
-  "private": true,
-  "scripts": {
-    "bootstrap": "lerna bootstrap --hoist",
-    "clean": "lerna clean",
-    "publish": "lerna publish prerelease --yes"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/web-ict/ict"
-  },
-  "devDependencies": {
-    "lerna": "^3.22.1"
-  }
+    "name": "root",
+    "private": true,
+    "scripts": {
+        "bootstrap": "lerna bootstrap --hoist",
+        "lint": "eslint ./",
+        "format": "prettier --write .",
+        "clean": "lerna clean",
+        "publish": "lerna publish"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/web-ict/ict"
+    },
+    "devDependencies": {
+        "babel-eslint": "^10.1.0",
+        "eslint": "^6.8.0",
+        "eslint-config-prettier": "^6.10.1",
+        "husky": "^4.3.0",
+        "lerna": "^3.22.1",
+        "lint-staged": "^10.5.1",
+        "prettier": "^2.0.2"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "*.js": "eslint --cache --fix",
+        "*.{js,css,md}": "prettier --write"
+    }
 }
