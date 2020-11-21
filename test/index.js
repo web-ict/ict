@@ -87,7 +87,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
         },
         subtangle: {
             capacity: 1000000, // In transactions
-            prunningScale: 10000,
+            pruningScale: 10000,
             timestampLowerBoundDelta: 90, // In seconds
             timestampUpperBoundDelta: 90,
         },

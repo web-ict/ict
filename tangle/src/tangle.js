@@ -45,7 +45,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import { NULL_HASH, NULL_TAG } from '@web-ict/transaction'
-import { trytes } from '@web-ict/converter'
+import { trytes, FALSE, TRUE } from '@web-ict/converter'
 
 const NULL_HASH_TRYTES = trytes(NULL_HASH)
 const NULL_TAG_TRYTES = trytes(NULL_TAG)
@@ -56,20 +56,80 @@ const vertex = (hash, index) => ({
     branchVertex: undefined,
     trunkVertex: undefined,
     referrers: new Set(),
+    rating: 0,
 })
 
-export const tangle = ({ capacity, prunningScale }) => {
+export const tangle = ({ capacity, pruningScale }) => {
     let index = 0
     const verticesByHash = new Map()
     verticesByHash.set(NULL_HASH_TRYTES, vertex(NULL_HASH_TRYTES, index++))
     const verticesByAddress = new Map()
     const verticesByTag = new Map()
 
+    // Updates ratings of (in)directly referenced transactions.
+    const updateRating = (hash, weight = 1) => {
+        const v = verticesByHash.get(hash)
+        if (v !== undefined) {
+            v.rating += weight
+
+            updateRating(v.transaction.trunkTransaction, weight)
+
+            if (v.transaction.branchTransaction !== v.transaction.trunkTransaction) {
+                updateRating(v.transaction.branchTransaction, weight)
+            }
+        }
+    }
+
+    const remove = (hash) => {
+        let v = verticesByHash.get(hash)
+        if (v === undefined || v.transaction === undefined) {
+            return FALSE
+        }
+
+        if (v.address !== NULL_HASH) {
+            const vertices = verticesByAddress.get(v.transaction.address)
+            vertices.delete(v)
+            if (vertices.size === 0) {
+                vertices.delete(v.transaction.address)
+            }
+        }
+
+        if (v.tag !== NULL_TAG) {
+            const vertices = verticesByTag.get(v.transaction.tag)
+            vertices.delete(v)
+            if (vertices.size === 0) {
+                vertices.delete(v.transaction.tag)
+            }
+        }
+
+        v.trunkVertex.referrers.delete(v)
+        if (v.trunkVertex.referrers.size === 0 && v.trunkVertex.transaction === undefined) {
+            verticesByHash.delete(v.trunkVertex.hash)
+        }
+
+        if (v.trunkVertex !== v.branchVertex) {
+            v.branchVertex.referrers.delete(v)
+            if (v.branchVertex.referrers.size === 0 && v.branchVertex.transaction === undefined) {
+                verticesByHash.delete(v.branchVertex.hash)
+            }
+        }
+    }
+
+    // Removes older tx with lower rating.
+    // It examines n=pruningScale out of N=capacity transactions.
     const pruneIfNeccessary = () => {
         if (verticesByHash.size > capacity) {
-            for (let i = 0; i < prunningScale; i++) {
-                // TODO: Implement pruning
+            const vertices = verticesByHash.values()
+            let min = vertices.next().value
+
+            for (let i = 0; i < Math.min(pruningScale, capacity); i++) {
+                const v = vertices.next().value
+                if (v !== undefined && v.rating < min.rating) {
+                    min = v
+                }
             }
+
+            remove(min.hash)
         }
     }
 
@@ -77,6 +137,7 @@ export const tangle = ({ capacity, prunningScale }) => {
         get(hash) {
             return verticesByHash.get(hash)
         },
+
         put(transaction) {
             let v = verticesByHash.get(transaction.hash)
 
@@ -85,87 +146,56 @@ export const tangle = ({ capacity, prunningScale }) => {
                 verticesByHash.set(transaction.hash, v)
             }
 
-            if (v.transaction === undefined) {
-                v.transaction = transaction
-                v.trunkVertex = verticesByHash.get(transaction.trunkTransaction)
-                if (v.trunkVertex === undefined) {
-                    v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
-                    verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
+            if (v.transaction !== undefined) {
+                return FALSE * v.index // seen tx
+            }
+
+            v.transaction = transaction
+            v.trunkVertex = verticesByHash.get(transaction.trunkTransaction)
+            if (v.trunkVertex === undefined) {
+                v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
+                verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
+            }
+            v.trunkVertex.referrers.add(v)
+
+            if (transaction.trunkTransaction === transaction.branchTransaction) {
+                v.branchVertex = v.trunkVertex
+            } else {
+                v.branchVertex = verticesByHash.get(transaction.branchTransaction)
+                if (v.branchVertex === undefined) {
+                    v.branchVertex = vertex(transaction.branchTransaction, ++index)
+                    verticesByHash.set(transaction.branchTransaction, v.branchVertex)
                 }
-                v.trunkVertex.referrers.add(v)
+                v.branchVertex.referrers.add(v)
+            }
 
-                if (transaction.trunkTransaction === transaction.branchTransaction) {
-                    v.branchVertex = v.trunkVertex
-                } else {
-                    v.branchVertex = verticesByHash.get(transaction.branchTransaction)
-                    if (v.branchVertex === undefined) {
-                        v.branchVertex = vertex(transaction.branchTransaction, ++index)
-                        verticesByHash.set(transaction.branchTransaction, v.branchVertex)
-                    }
-                    v.branchVertex.referrers.add(v)
+            if (transaction.address !== NULL_HASH) {
+                let vertices = verticesByAddress.get(transaction.address)
+                if (vertices === undefined) {
+                    vertices = new Set()
+                    verticesByAddress.set(transaction.address, vertices)
                 }
+                vertices.add(v)
+            }
 
-                if (transaction.address !== NULL_HASH) {
-                    let vertices = verticesByAddress.get(transaction.address)
-                    if (vertices === undefined) {
-                        vertices = new Set()
-                        verticesByAddress.set(transaction.address, vertices)
-                    }
-                    vertices.add(v)
+            if (transaction.tag !== NULL_TAG_TRYTES) {
+                let vertices = verticesByTag.get(transaction.tag)
+                if (vertices === undefined) {
+                    vertices = new Set()
+                    verticesByTag.set(transaction.tag, vertices)
                 }
-
-                if (transaction.tag !== NULL_TAG_TRYTES) {
-                    let vertices = verticesByTag.get(transaction.tag)
-                    if (vertices === undefined) {
-                        vertices = new Set()
-                        verticesByTag.set(transaction.tag, vertices)
-                    }
-                    vertices.add(v)
-                }
-
-                pruneIfNeccessary()
-
-                return v.index // New tx
+                vertices.add(v)
             }
 
             pruneIfNeccessary()
 
-            return -v.index // Seen tx
+            return TRUE * v.index // New tx
         },
-        remove(hash) {
-            let v = verticesByHash.get(hash)
-            if (v === undefined || v.transaction === undefined) {
-                return -1
-            }
 
-            if (v.address !== NULL_HASH) {
-                const vertices = verticesByAddress.get(v.transaction.address)
-                vertices.delete(v)
-                if (vertices.size === 0) {
-                    vertices.delete(v.transaction.address)
-                }
-            }
+        updateRating,
 
-            if (v.tag !== NULL_TAG) {
-                const vertices = verticesByTag.get(v.transaction.tag)
-                vertices.delete(v)
-                if (vertices.size === 0) {
-                    vertices.delete(v.transaction.tag)
-                }
-            }
+        remove,
 
-            v.trunkVertex.referrers.delete(v)
-            if (v.trunkVertex.referrers.size === 0 && v.trunkVertex.transaction === undefined) {
-                verticesByHash.delete(v.trunkVertex.hash)
-            }
-
-            if (v.trunkVertex !== v.branchVertex) {
-                v.branchVertex.referrers.delete(v)
-                if (v.branchVertex.referrers.size === 0 && v.branchVertex.transaction === undefined) {
-                    verticesByHash.delete(v.branchVertex.hash)
-                }
-            }
-        },
         clear() {
             index = 0
             verticesByHash.clear()
@@ -173,6 +203,7 @@ export const tangle = ({ capacity, prunningScale }) => {
             verticesByAddress.clear()
             verticesByTag.clear()
         },
+
         info: () => ({
             size: verticesByHash.size,
         }),
