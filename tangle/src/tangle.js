@@ -116,13 +116,13 @@ export const tangle = ({ capacity, pruningScale }) => {
     }
 
     // Removes older tx with lower rating.
-    // It examines n=pruningScale out of N=capacity transactions.
+    // It examines n = pruningScale * capacity transactions.
     const pruneIfNeccessary = () => {
         if (verticesByHash.size > capacity) {
             const vertices = verticesByHash.values()
             let min = vertices.next().value
 
-            for (let i = 0; i < Math.min(pruningScale, capacity); i++) {
+            for (let i = 0; i < Math.min(pruningScale, 1) * capacity; i++) {
                 const v = vertices.next().value
                 if (v !== undefined && v.rating < min.rating) {
                     min = v
