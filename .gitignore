@@ -16,3 +16,4 @@ Thumbs.db
 yarn.lock
 coverage
 dist
+.eslintcache
