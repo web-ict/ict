@@ -86,14 +86,14 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
             B: 1000,
         },
         subtangle: {
-            capacity: 1000000, // In transactions
-            pruningScale: 0.1,
+            capacity: 100, // In transactions
+            pruningScale: 1, // In proportion to capacity
         },
         Curl729_27,
     })
     test.launch()
 
-    setInterval(routine(test.ixi, Curl729_27), 1000)
+    setInterval(routine(test.ixi, Curl729_27), 10)
 
     const step = () => {
         const info = test.info()
@@ -107,6 +107,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
             logCount(`rate-of-new-transactions-${i}`, peer.rateOfNewTransactions)
         })
 
+        logCount('subtangle-size', info.subtangle.size)
         logCount('number-of-inbound-transactions', info.numberOfInboundTransactions)
         logCount('number-of-outbound-transactions', info.numberOfOutboundTransactions)
         logCount('number-of-new-transactions', info.numberOfNewTransactions)

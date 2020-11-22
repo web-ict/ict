@@ -82,35 +82,45 @@ export const tangle = ({ capacity, pruningScale }) => {
 
     const remove = (hash) => {
         let v = verticesByHash.get(hash)
-        if (v === undefined || v.transaction === undefined) {
+        if (v === undefined) {
             return FALSE
         }
 
-        if (v.address !== NULL_HASH) {
-            const vertices = verticesByAddress.get(v.transaction.address)
-            vertices.delete(v)
-            if (vertices.size === 0) {
-                vertices.delete(v.transaction.address)
+        verticesByHash.delete(hash)
+
+        if (v.transaction !== undefined) {
+            if (v.transaction.address !== NULL_HASH) {
+                const vertices = verticesByAddress.get(v.transaction.address)
+                vertices.delete(v)
+                if (vertices.size === 0) {
+                    vertices.delete(v.transaction.address)
+                }
+            }
+
+            if (v.transaction.tag !== NULL_TAG) {
+                const vertices = verticesByTag.get(v.transaction.tag)
+                vertices.delete(v)
+                if (vertices.size === 0) {
+                    vertices.delete(v.transaction.tag)
+                }
             }
         }
 
-        if (v.tag !== NULL_TAG) {
-            const vertices = verticesByTag.get(v.transaction.tag)
-            vertices.delete(v)
-            if (vertices.size === 0) {
-                vertices.delete(v.transaction.tag)
+        if (v.trunkVertex !== undefined) {
+            v.trunkVertex.referrers.delete(v)
+            if (v.trunkVertex.referrers.size === 0 && v.trunkVertex.transaction === undefined) {
+                verticesByHash.delete(v.trunkVertex.hash)
+            } else {
+                pruneIfNeccessary()
             }
-        }
-
-        v.trunkVertex.referrers.delete(v)
-        if (v.trunkVertex.referrers.size === 0 && v.trunkVertex.transaction === undefined) {
-            verticesByHash.delete(v.trunkVertex.hash)
         }
 
         if (v.trunkVertex !== v.branchVertex) {
             v.branchVertex.referrers.delete(v)
             if (v.branchVertex.referrers.size === 0 && v.branchVertex.transaction === undefined) {
                 verticesByHash.delete(v.branchVertex.hash)
+            } else {
+                pruneIfNeccessary()
             }
         }
     }
