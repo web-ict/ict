@@ -62,9 +62,12 @@ const vertex = (hash, index) => ({
 export const tangle = ({ capacity, pruningScale }) => {
     let index = 0
     const verticesByHash = new Map()
-    verticesByHash.set(NULL_HASH_TRYTES, vertex(NULL_HASH_TRYTES, index++))
     const verticesByAddress = new Map()
     const verticesByTag = new Map()
+    const tips = new Set()
+
+    verticesByHash.set(NULL_HASH_TRYTES, vertex(NULL_HASH_TRYTES, index++))
+    tips.add(verticesByHash.get(NULL_HASH_TRYTES))
 
     // Updates ratings of (in)directly referenced transactions.
     const updateRating = (hash, weight = 1) => {
@@ -87,6 +90,7 @@ export const tangle = ({ capacity, pruningScale }) => {
         }
 
         verticesByHash.delete(hash)
+        tips.delete(v)
 
         if (v.transaction !== undefined) {
             if (v.transaction.address !== NULL_HASH) {
@@ -129,11 +133,11 @@ export const tangle = ({ capacity, pruningScale }) => {
     // It examines n = pruningScale * capacity transactions.
     const pruneIfNeccessary = () => {
         if (verticesByHash.size > capacity) {
-            const vertices = verticesByHash.values()
-            let min = vertices.next().value
+            const verticesIterator = verticesByHash.values()
+            let min = verticesIterator.next().value
 
             for (let i = 0; i < Math.min(pruningScale, 1) * capacity; i++) {
-                const v = vertices.next().value
+                const v = verticesIterator.next().value
                 if (v !== undefined && v.rating < min.rating) {
                     min = v
                 }
@@ -154,6 +158,10 @@ export const tangle = ({ capacity, pruningScale }) => {
             if (v === undefined) {
                 v = vertex(transaction.hash, ++index)
                 verticesByHash.set(transaction.hash, v)
+
+                if (transaction.tailFlag === TRUE) {
+                    tips.add(v)
+                }
             }
 
             if (v.transaction !== undefined) {
@@ -161,12 +169,14 @@ export const tangle = ({ capacity, pruningScale }) => {
             }
 
             v.transaction = transaction
+
             v.trunkVertex = verticesByHash.get(transaction.trunkTransaction)
             if (v.trunkVertex === undefined) {
                 v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
                 verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
             }
             v.trunkVertex.referrers.add(v)
+            tips.delete(v.trunkVertex)
 
             if (transaction.trunkTransaction === transaction.branchTransaction) {
                 v.branchVertex = v.trunkVertex
@@ -177,6 +187,7 @@ export const tangle = ({ capacity, pruningScale }) => {
                     verticesByHash.set(transaction.branchTransaction, v.branchVertex)
                 }
                 v.branchVertex.referrers.add(v)
+                tips.delete(v.branchVertex)
             }
 
             if (transaction.address !== NULL_HASH) {
@@ -202,6 +213,17 @@ export const tangle = ({ capacity, pruningScale }) => {
             return TRUE * v.index // New tx
         },
 
+        bestReferrerHash() {
+            const tipsIterator = tips.values()
+            let v = tipsIterator.next().value
+
+            for (let i = 0; i < Math.floor(Math.random() * Math.floor(tips.size)); i++) {
+                v = tipsIterator.next().value
+            }
+
+            return v.hash
+        },
+
         updateRating,
 
         remove,
@@ -216,6 +238,7 @@ export const tangle = ({ capacity, pruningScale }) => {
 
         info: () => ({
             size: verticesByHash.size,
+            numberOfTips: tips.size,
         }),
     }
 }
