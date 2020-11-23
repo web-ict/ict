@@ -174,6 +174,8 @@ export const transactionTrits = ({
     } else {
         trits.set(TRANSACTION_NONCE_OFFSET, transactionNonce.slice(0, TRANSACTION_NONCE_LENGTH))
     }
+
+    return trits
 }
 
 export const updateTransactionNonce = (Curl729_27) => (
@@ -181,8 +183,8 @@ export const updateTransactionNonce = (Curl729_27) => (
     type,
     headFlag,
     tailFlag,
-    security,
-    maxNumberOfAttempts
+    maxNumberOfAttempts,
+    security
 ) => {
     if ([-1, 0, 1].indexOf(type) === -1) {
         throw new RangeError('Illegal type. Expected one of -1, 0 or 1.')

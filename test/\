@@ -115,13 +115,13 @@ function routine(ixi, Curl729_27) {
     const maxNumberOfAttempts = 81
 
     return () => {
-        const signatureOrMessage = new Int8Array(MESSAGE_OR_SIGNATURE_LENGTH)
+        const signatureOrMessage = new Int8Array(MESSAGE_OR_SIGNATURE_LENGTH) 
         integerValueToTrits(index++, signatureOrMessage, 0)
 
         const trits = transactionTrits({
-            signatureOrMessage,
+            signatureOrMessage
         })
-
+        
         ixi.getTransactionsToApprove(trits)
         updateTransactionNonce(Curl729_27)(trits, 1, TRUE, TRUE, maxNumberOfAttempts)
         ixi.entangle(trits)
