@@ -46,22 +46,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { node } from '@web-ict/node'
 import { WebRTC_Peer, signalingClient } from '@web-ict/autopeering'
-import {
-    TRANSACTION_LENGTH,
-    NULL_HASH,
-    TRUNK_TRANSACTION_OFFSET,
-    BRANCH_TRANSACTION_OFFSET,
-    TRANSACTION_NONCE_OFFSET,
-    TRANSACTION_NONCE_LENGTH,
-    HASH_LENGTH,
-    TYPE_OFFSET,
-    TAIL_FLAG_OFFSET,
-    HEAD_FLAG_OFFSET,
-    BUNDLE_NONCE_OFFSET,
-    MESSAGE_OR_SIGNATURE_OFFSET,
-    BUNDLE_NONCE_LENGTH,
-} from '@web-ict/transaction'
-import { integerValueToTrits, FALSE, TRUE } from '@web-ict/converter'
+import { MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
+import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
+import { integerValueToTrits, TRUE } from '@web-ict/converter'
 
 import('@web-ict/curl').then(({ Curl729_27 }) => {
     const test = node({
@@ -83,17 +70,17 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
         },
         dissemination: {
             A: 1, // In milliseconds
-            B: 1000,
+            B: 100,
         },
         subtangle: {
             capacity: 100, // In transactions
-            pruningScale: 1, // In proportion to capacity
+            pruningScale: 0.1, // In proportion to capacity
         },
         Curl729_27,
     })
     test.launch()
 
-    setInterval(routine(test.ixi, Curl729_27), 10)
+    setInterval(routine(test.ixi, Curl729_27), 100)
 
     const step = () => {
         const info = test.info()
@@ -108,6 +95,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
         })
 
         logCount('subtangle-size', info.subtangle.size)
+        logCount('number-of-tips', info.subtangle.numberOfTips)
         logCount('number-of-inbound-transactions', info.numberOfInboundTransactions)
         logCount('number-of-outbound-transactions', info.numberOfOutboundTransactions)
         logCount('number-of-new-transactions', info.numberOfNewTransactions)
@@ -124,40 +112,18 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
 
 function routine(ixi, Curl729_27) {
     let index = 0
-    const hashes = [NULL_HASH.slice()]
     const maxNumberOfAttempts = 81
 
     return () => {
-        const trits = new Int8Array(TRANSACTION_LENGTH)
-        integerValueToTrits(index++, trits, MESSAGE_OR_SIGNATURE_OFFSET)
-        for (let offset = 0; offset < BUNDLE_NONCE_LENGTH; offset++) {
-            trits[BUNDLE_NONCE_OFFSET + offset] = Math.floor(Math.random() * 3 - 1)
-        }
-        trits.set(hashes[Math.floor(Math.random() * hashes.length)].slice(), TRUNK_TRANSACTION_OFFSET)
-        trits.set(hashes[Math.floor(Math.random() * hashes.length)].slice(), BRANCH_TRANSACTION_OFFSET)
+        const signatureOrMessage = new Int8Array(MESSAGE_OR_SIGNATURE_LENGTH)
+        integerValueToTrits(index++, signatureOrMessage, 0)
 
-        const hashTrits = new Int8Array(HASH_LENGTH)
-        let numberOfFailedAttempts = 0
+        const trits = transactionTrits({
+            signatureOrMessage,
+        })
 
-        do {
-            Curl729_27.get_digest(trits, 0, TRANSACTION_LENGTH, hashTrits, 0)
-            if (
-                hashTrits[TYPE_OFFSET] === TRUE &&
-                hashTrits[TAIL_FLAG_OFFSET] !== FALSE &&
-                hashTrits[HEAD_FLAG_OFFSET] > FALSE
-            ) {
-                break
-            }
-            for (let i = 0; i < TRANSACTION_NONCE_LENGTH; i++) {
-                if (++trits[TRANSACTION_NONCE_OFFSET + i] > 1) {
-                    trits[TRANSACTION_NONCE_OFFSET + i] = -1
-                } else {
-                    break
-                }
-            }
-        } while (++numberOfFailedAttempts < maxNumberOfAttempts)
-
-        hashes.push(hashTrits)
+        ixi.getTransactionsToApprove(trits)
+        updateTransactionNonce(Curl729_27)(trits, 1, TRUE, TRUE, maxNumberOfAttempts)
         ixi.entangle(trits)
     }
 }
