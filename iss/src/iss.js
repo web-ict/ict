@@ -319,14 +319,14 @@ export const merkleTree = (Curl729_27) => (seed, start, depth, security) => {
             let key
             let size = node.size
             if (index < size) {
-                while (node != null) {
-                    if (node.left == null) {
+                while (node !== undefined) {
+                    if (node.left === undefined) {
                         key = node
                         break
                     }
                     size = node.left.size
                     if (index < size) {
-                        if (node.right != null) {
+                        if (node.right !== undefined) {
                             tree.unshift(node.right)
                         } else {
                             tree.unshift(node.left)
