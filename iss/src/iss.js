@@ -268,7 +268,7 @@ export const merkleTree = (Curl729_27) => (seed, start, depth, security) => {
         const hash = addressFromDigests(Curl729_27)(digestsTrits)
 
         return {
-            key,
+            key: keyTrits,
             hash,
             size: 1,
         }
@@ -312,7 +312,7 @@ export const merkleTree = (Curl729_27) => (seed, start, depth, security) => {
     const root = computeMerkleTree(pairs)
 
     return {
-        root,
+        root: root.hash,
         get: (index) => {
             const tree = []
             let node = root
@@ -340,7 +340,7 @@ export const merkleTree = (Curl729_27) => (seed, start, depth, security) => {
                 }
             }
             return {
-                key: key,
+                key: key.key,
                 siblings: tree.reduce((acc, { hash }, i) => {
                     acc.set(hash, i * HASH_LENGTH)
                     return acc
@@ -355,6 +355,7 @@ export const iss = (Curl729_27, state) => ({
     key: key(Curl729_27),
     digests: digests(Curl729_27),
     address: address(Curl729_27, state),
+    addressFromDigests: addressFromDigests(Curl729_27),
     digest: digest(Curl729_27),
     signatureFragment: signatureFragment(Curl729_27),
     validateSignatures: validateSignatures(Curl729_27),
