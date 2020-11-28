@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use-strict'
 
-import { trytes, integerValue, bigIntegerValue, FALSE, UNKNOWN } from '@web-ict/converter'
+import { trytes, trytesToTrits, integerValue, bigIntegerValue, TRUE, FALSE, TRYTE_WIDTH } from '@web-ict/converter'
 
 export const HASH_LENGTH = 243
 
@@ -107,12 +107,17 @@ export const TYPE_OFFSET = 0
 export const HEAD_FLAG_OFFSET = 1
 export const TAIL_FLAG_OFFSET = 2
 
-export const NULL_HASH = new Int8Array(HASH_LENGTH).fill(UNKNOWN)
-export const NULL_TAG = new Int8Array(TAG_LENGTH).fill(UNKNOWN)
+export const NULL_HASH_TRYTES = '9'.repeat(HASH_LENGTH / TRYTE_WIDTH)
+export const NULL_TAG_TRYTES = '9'.repeat(TAG_LENGTH / TRYTE_WIDTH)
+export const NULL_TRANSACTION_HASH_TRYTES =
+    'LOOTDIYCRPJG9UCFENYMNXS9QYKSLDQCDGWFIQLEGGJXPYVCNSRAESGALYYGBPAKULJAA9CPFIBLFVTFW'
+
+export const NULL_TRANSACTION_HASH = new Int8Array(HASH_LENGTH)
+trytesToTrits(NULL_TRANSACTION_HASH_TRYTES, NULL_TRANSACTION_HASH, 0, HASH_LENGTH)
 
 export const transaction = (Curl729_27, trits) => {
     // Branch transaction must be tail
-    if (trits[BRANCH_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] === FALSE) {
+    if (trits[BRANCH_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] !== TRUE) {
         return FALSE
     }
 
@@ -147,12 +152,12 @@ export const transaction = (Curl729_27, trits) => {
     const tailFlag = hashTrits[TAIL_FLAG_OFFSET]
 
     // Trunk transaction of a head must be tail
-    if (headFlag !== FALSE && trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] === FALSE) {
+    if (headFlag === TRUE && trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] !== TRUE) {
         return FALSE
     }
 
     // Trunk transaction of a non-head must not be tail
-    if (headFlag === FALSE && trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] !== FALSE) {
+    if (headFlag === FALSE && trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] === TRUE) {
         return FALSE
     }
 

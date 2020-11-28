@@ -110,14 +110,14 @@ export const transactionTrits = ({
     const trits = new Int8Array(TRANSACTION_LENGTH)
 
     if (messageOrSignature !== undefined) {
-        trits.set(MESSAGE_OR_SIGNATURE_OFFSET, messageOrSignature.slice(0, MESSAGE_OR_SIGNATURE_LENGTH))
+        trits.set(messageOrSignature.slice(0, MESSAGE_OR_SIGNATURE_LENGTH), MESSAGE_OR_SIGNATURE_OFFSET)
     }
 
     if (extraDataDigest !== undefined) {
-        trits.set(EXTRA_DATA_DIGEST_OFFSET, extraDataDigest.slice(0, EXTRA_DATA_DIGEST_LENGTH))
+        trits.set(extraDataDigest.slice(0, EXTRA_DATA_DIGEST_LENGTH), EXTRA_DATA_DIGEST_OFFSET)
     }
     if (address !== undefined) {
-        trits.set(ADDRESS_OFFSET, address.slice(0, ADDRESS_LENGTH))
+        trits.set(address.slice(0, ADDRESS_LENGTH), ADDRESS_OFFSET)
     }
     if (value) {
         bigIntegerValueToTrits(value, trits, VALUE_OFFSET, VALUE_LENGTH)
@@ -136,17 +136,17 @@ export const transactionTrits = ({
             trits[offset] = Math.floor(Math.random() * 3 - 1) // To enable steganography
         }
     } else {
-        trits.set(BUNDLE_NONCE_OFFSET, bundleNonce.slice(0, BUNDLE_NONCE_LENGTH))
+        trits.set(bundleNonce.slice(0, BUNDLE_NONCE_LENGTH), BUNDLE_NONCE_OFFSET)
     }
 
     if (trunkTransaction !== undefined) {
-        trits.set(TRUNK_TRANSACTION_OFFSET, trunkTransaction.slice(0, TRUNK_TRANSACTION_LENGTH))
+        trits.set(trunkTransaction.slice(0, TRUNK_TRANSACTION_LENGTH), TRUNK_TRANSACTION_OFFSET)
     }
     if (branchTransaction !== undefined) {
-        trits.set(BRANCH_TRANSACTION_OFFSET, branchTransaction.slice(0, BRANCH_TRANSACTION_LENGTH))
+        trits.set(branchTransaction.slice(0, BRANCH_TRANSACTION_LENGTH), BRANCH_TRANSACTION_OFFSET)
     }
     if (tag !== undefined) {
-        trits.set(TAG_OFFSET, tag.slice(0, TAG_LENGTH))
+        trits.set(tag.slice(0, TAG_LENGTH), TAG_OFFSET)
     }
     if (attachmentTimestamp) {
         integerValueToTrits(attachmentTimestamp, trits, ATTACHMENT_TIMESTAMP_OFFSET, ATTACHMENT_TIMESTAMP_LENGTH)
@@ -172,7 +172,7 @@ export const transactionTrits = ({
             trits[offset] = Math.floor(Math.random() * 3 - 1) // To enable steganography
         }
     } else {
-        trits.set(TRANSACTION_NONCE_OFFSET, transactionNonce.slice(0, TRANSACTION_NONCE_LENGTH))
+        trits.set(transactionNonce.slice(0, TRANSACTION_NONCE_LENGTH), TRANSACTION_NONCE_OFFSET)
     }
 
     return trits
@@ -203,22 +203,24 @@ export const updateTransactionNonce = (Curl729_27) => (
 
     do {
         Curl729_27.get_digest(trits, 0, TRANSACTION_LENGTH, hash, 0)
-        if (hash[TYPE_OFFSET] === type && hash[HEAD_FLAG_OFFSET] === headFlag && hash[TAIL_FLAG_OFFSET] === tailFlag) {
-            if (security) {
-                let i = 0
-                do {
-                    const w = hammingWeight(hash, (i * HASH_LENGTH) / BUNDLE_FRAGMENT_LENGTH)
-                    if (i < security ? w === 0 : w !== 0) {
-                        break
-                    }
-                } while (++i < NUMBER_OF_SECURITY_LEVELS)
 
-                if (i === NUMBER_OF_SECURITY_LEVELS) {
+        let weightValidityFlag = true
+        if (security) {
+            for (let i = 0; i < security; i++) {
+                if (hammingWeight(hash, i * BUNDLE_FRAGMENT_LENGTH) !== 0) {
+                    weightValidityFlag = false
                     break
                 }
-            } else {
-                break
             }
+        }
+
+        if (
+            weightValidityFlag &&
+            hash[TYPE_OFFSET] === type &&
+            hash[HEAD_FLAG_OFFSET] === headFlag &&
+            hash[TAIL_FLAG_OFFSET] === tailFlag
+        ) {
+            break
         }
 
         for (let i = TRANSACTION_NONCE_OFFSET; i < TRANSACTION_NONCE_END; i++) {
@@ -230,7 +232,10 @@ export const updateTransactionNonce = (Curl729_27) => (
         }
     } while (++numberOfFailedAttempts < maxNumberOfAttempts)
 
-    return numberOfFailedAttempts
+    return {
+        numberOfFailedAttempts,
+        hash,
+    }
 }
 
 export const essence = (transactions) => {

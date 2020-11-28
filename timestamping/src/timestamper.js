@@ -44,16 +44,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { MESSAGE_OR_SIGNATURE_END } from '@web-ict/transaction'
+import { MESSAGE_OR_SIGNATURE_OFFSET } from '@web-ict/transaction'
 import { integerValueToTrits, trytesToTrits } from '@web-ict/converter'
 import WebSocket from 'ws'
 import url from 'url'
 
 export const TIMESTAMP_LENGTH = 81
-export const TIMESTAMP_OFFSET = MESSAGE_OR_SIGNATURE_END - 3 * TIMESTAMP_LENGTH
+export const NUMBER_OF_TIMESTAMPS = 3
+export const TIMESTAMP_OFFSET = MESSAGE_OR_SIGNATURE_OFFSET
 
 export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, retryIntervalDuration }) => {
-    const sockets = new Array(3)
+    const sockets = new Array(NUMBER_OF_TIMESTAMPS)
     const requests = new Map()
     let timestampValue = 0
     let running = true
@@ -115,7 +116,7 @@ export const timestamper = ({ timestampingServers, reconnectTimeoutDuration, ret
     const request = (i) =>
         new Promise((resolve) => {
             requests.set(i, {
-                timestamps: Array(3),
+                timestamps: Array(NUMBER_OF_TIMESTAMPS),
                 retryInterval: setInterval(retry(i), retryIntervalDuration),
                 resolve,
             })

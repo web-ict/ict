@@ -1,0 +1,33 @@
+{
+    "name": "@web-ict/milestoning",
+    "version": "0.0.0-beta.8",
+    "description": "",
+    "publishConfig": {
+        "access": "public"
+    },
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "lint": "eslint ./",
+        "format": "prettier --write .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Chris Dukakis",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/web-ict/ict"
+    },
+    "dependencies": {
+        "@web-ict/iss": "^0.0.0-beta.7",
+        "@web-ict/bundle": "^0.0.0-beta.7",
+        "@web-ict/timestamping": "^0.0.0-beta.7",
+        "@web-ict/converter": "^0.0.0-beta.7",
+        "@web-ict/transaction": "^0.0.0-beta.7"
+    },
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-prettier": "^6.10.1",
+        "prettier": "^2.0.2"
+    },
+    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
+}
