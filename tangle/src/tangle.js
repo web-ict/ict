@@ -44,11 +44,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { NULL_HASH, NULL_TAG } from '@web-ict/transaction'
-import { trytes, FALSE, TRUE } from '@web-ict/converter'
-
-const NULL_HASH_TRYTES = trytes(NULL_HASH)
-const NULL_TAG_TRYTES = trytes(NULL_TAG)
+import { NULL_TRANSACTION_HASH_TRYTES, NULL_HASH_TRYTES, NULL_TAG_TRYTES } from '@web-ict/transaction'
+import { FALSE, TRUE } from '@web-ict/converter'
 
 const vertex = (hash, index) => ({
     hash,
@@ -59,15 +56,15 @@ const vertex = (hash, index) => ({
     rating: 0,
 })
 
-export const tangle = ({ capacity, pruningScale }) => {
+export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     let index = 0
     const verticesByHash = new Map()
     const verticesByAddress = new Map()
     const verticesByTag = new Map()
     const tips = new Set()
 
-    verticesByHash.set(NULL_HASH_TRYTES, vertex(NULL_HASH_TRYTES, index++))
-    tips.add(verticesByHash.get(NULL_HASH_TRYTES))
+    verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
+    tips.add(verticesByHash.get(NULL_TRANSACTION_HASH_TRYTES))
 
     // Updates ratings of (in)directly referenced transactions.
     const updateRating = (hash, weight = 1) => {
@@ -93,7 +90,7 @@ export const tangle = ({ capacity, pruningScale }) => {
         tips.delete(v)
 
         if (v.transaction !== undefined) {
-            if (v.transaction.address !== NULL_HASH) {
+            if (v.transaction.address !== NULL_HASH_TRYTES) {
                 const vertices = verticesByAddress.get(v.transaction.address)
                 vertices.delete(v)
                 if (vertices.size === 0) {
@@ -101,7 +98,7 @@ export const tangle = ({ capacity, pruningScale }) => {
                 }
             }
 
-            if (v.transaction.tag !== NULL_TAG) {
+            if (v.transaction.tag !== NULL_TAG_TRYTES) {
                 const vertices = verticesByTag.get(v.transaction.tag)
                 vertices.delete(v)
                 if (vertices.size === 0) {
@@ -152,6 +149,13 @@ export const tangle = ({ capacity, pruningScale }) => {
             return verticesByHash.get(hash)
         },
 
+        getTransaction(hash) {
+            const v = verticesByHash.get(hash)
+            if (v !== undefined) {
+                return v.transaction
+            }
+        },
+
         put(transaction) {
             let v = verticesByHash.get(transaction.hash)
 
@@ -176,7 +180,7 @@ export const tangle = ({ capacity, pruningScale }) => {
                 verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
             }
             v.trunkVertex.referrers.add(v)
-            tips.delete(v.trunkVertex)
+            setTimeout(() => tips.delete(v.trunkVertex), artificialLatency)
 
             if (transaction.trunkTransaction === transaction.branchTransaction) {
                 v.branchVertex = v.trunkVertex
@@ -187,10 +191,10 @@ export const tangle = ({ capacity, pruningScale }) => {
                     verticesByHash.set(transaction.branchTransaction, v.branchVertex)
                 }
                 v.branchVertex.referrers.add(v)
-                tips.delete(v.branchVertex)
+                setTimeout(() => tips.delete(v.branchVertex), artificialLatency)
             }
 
-            if (transaction.address !== NULL_HASH) {
+            if (transaction.address !== NULL_HASH_TRYTES) {
                 let vertices = verticesByAddress.get(transaction.address)
                 if (vertices === undefined) {
                     vertices = new Set()
@@ -227,6 +231,24 @@ export const tangle = ({ capacity, pruningScale }) => {
         updateRating,
 
         remove,
+
+        getTransactionsByAddress(address) {
+            const vertices = verticesByAddress.get(address)
+            const transactions = []
+            if (vertices !== undefined) {
+                vertices.forEach((v) => transactions.push(v.transaction))
+            }
+            return transactions
+        },
+
+        getTransactionsByTag(tag) {
+            const vertices = verticesByTag.get(tag)
+            const transactions = []
+            if (vertices !== undefined) {
+                vertices.forEach((v) => transactions.push(v.transaction))
+            }
+            return transactions
+        },
 
         clear() {
             index = 0

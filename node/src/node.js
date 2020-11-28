@@ -70,6 +70,7 @@ export const node = function (properties) {
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
     const subtangle = tangle(properties.subtangle)
+    let listener
     let numberOfInboundTransactions
     let numberOfOutboundTransactions
     let numberOfNewTransactions
@@ -83,6 +84,10 @@ export const node = function (properties) {
             // Invalid tx
             numberOfInvalidTransactions++
             return UNKNOWN
+        }
+
+        if (typeof listener === 'function') {
+            listener(tx)
         }
 
         const i = subtangle.put(tx)
@@ -173,10 +178,17 @@ export const node = function (properties) {
             peering.launch(receive)
         },
         ixi: {
+            listen: (fn) => {
+                listener = fn
+            },
             getTransactionsToApprove: (trits) => {
                 trytesToTrits(subtangle.bestReferrerHash(), trits, TRUNK_TRANSACTION_OFFSET)
                 trytesToTrits(subtangle.bestReferrerHash(), trits, BRANCH_TRANSACTION_OFFSET)
             },
+            getTransaction: subtangle.getTransaction,
+            getTransactionsByAddress: subtangle.getTransactionsByAddress,
+            getTransactionsByTag: subtangle.getTransactionsByTag,
+            updateSubtangleRating: subtangle.updateRating,
             entangle: (trits) => {
                 numberOfIxiTransactions++
                 entangle(trits)
