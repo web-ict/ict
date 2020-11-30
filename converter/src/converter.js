@@ -53,6 +53,7 @@ export const TRITS_PER_TRYTE = MAX_TRIT_VALUE - MIN_TRIT_VALUE + 1
 export const BYTES_PER_ELEMENT = 2
 export const TRITS_PER_ELEMENT = 9
 
+export const TRYTE_WIDTH = 3
 export const TRYTES = '9ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 export const TRYTES_TRITS = [
     [0, 0, 0],
