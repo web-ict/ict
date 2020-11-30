@@ -63,25 +63,13 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const verticesByTag = new Map()
     const tips = new Set()
 
+    const get = hash => verticesByHash.get(hash)
+
     verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
-    tips.add(verticesByHash.get(NULL_TRANSACTION_HASH_TRYTES))
-
-    // Updates ratings of (in)directly referenced transactions.
-    const updateRating = (hash, weight = 1) => {
-        const v = verticesByHash.get(hash)
-        if (v !== undefined) {
-            v.rating += weight
-
-            updateRating(v.transaction.trunkTransaction, weight)
-
-            if (v.transaction.branchTransaction !== v.transaction.trunkTransaction) {
-                updateRating(v.transaction.branchTransaction, weight)
-            }
-        }
-    }
+    tips.add(get(NULL_TRANSACTION_HASH_TRYTES))
 
     const remove = (hash) => {
-        let v = verticesByHash.get(hash)
+        let v = get(hash)
         if (v === undefined) {
             return FALSE
         }
@@ -109,20 +97,16 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
         if (v.trunkVertex !== undefined) {
             v.trunkVertex.referrers.delete(v)
-            if (v.trunkVertex.referrers.size === 0 && v.trunkVertex.transaction === undefined) {
+            if (v.trunkVertex.referrers.size === 0) {
                 verticesByHash.delete(v.trunkVertex.hash)
-            } else {
-                pruneIfNeccessary()
             }
         }
 
         if (v.trunkVertex !== v.branchVertex) {
             v.branchVertex.referrers.delete(v)
-            if (v.branchVertex.referrers.size === 0 && v.branchVertex.transaction === undefined) {
+            if (v.branchVertex.referrers.size === 0) {
                 verticesByHash.delete(v.branchVertex.hash)
-            } else {
-                pruneIfNeccessary()
-            }
+            } 
         }
     }
 
@@ -144,123 +128,143 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         }
     }
 
-    return {
-        get(hash) {
-            return verticesByHash.get(hash)
-        },
+    const put = transaction => {
+       let v = get(transaction.hash)
 
-        getTransaction(hash) {
-            const v = verticesByHash.get(hash)
+        if (v === undefined) {
+            v = vertex(transaction.hash, ++index)
+            verticesByHash.set(transaction.hash, v)
+
+            if (transaction.tailFlag === TRUE) {
+                tips.add(v)
+            }
+        }
+
+        if (v.transaction !== undefined) {
+            return FALSE * v.index // seen tx
+        }
+
+        v.transaction = transaction
+
+        v.trunkVertex = get(transaction.trunkTransaction)
+        if (v.trunkVertex === undefined) {
+            v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
+            verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
+        }
+        v.trunkVertex.referrers.add(v)
+        setTimeout(() => tips.delete(v.trunkVertex), artificialLatency)
+
+        if (transaction.trunkTransaction === transaction.branchTransaction) {
+            v.branchVertex = v.trunkVertex
+        } else {
+            v.branchVertex = get(transaction.branchTransaction)
+            if (v.branchVertex === undefined) {
+                v.branchVertex = vertex(transaction.branchTransaction, ++index)
+                verticesByHash.set(transaction.branchTransaction, v.branchVertex)
+            }
+            v.branchVertex.referrers.add(v)
+            setTimeout(() => tips.delete(v.branchVertex), artificialLatency)
+        }
+
+        if (transaction.address !== NULL_HASH_TRYTES) {
+            let vertices = verticesByAddress.get(transaction.address)
+            if (vertices === undefined) {
+                vertices = new Set()
+                verticesByAddress.set(transaction.address, vertices)
+            }
+            vertices.add(v)
+        }
+
+        if (transaction.tag !== NULL_TAG_TRYTES) {
+            let vertices = verticesByTag.get(transaction.tag)
+            if (vertices === undefined) {
+                vertices = new Set()
+                verticesByTag.set(transaction.tag, vertices)
+            }
+            vertices.add(v)
+        }
+
+        pruneIfNeccessary()
+
+        return TRUE * v.index // New tx
+    }
+    
+    const getTransaction = (hash) => {
+        const v = get(hash)
+        if (v !== undefined) {
+            return v.transaction
+        }
+    }
+
+    const getTransactionsByAddress = (address) => {
+        const vertices = verticesByAddress.get(address)
+        const transactions = []
+        if (vertices !== undefined) {
+            vertices.forEach((v) => transactions.push(v.transaction))
+        }
+        return transaction
+    }
+
+    const getTransactionsByTag = (tag) => {
+        const vertices = verticesByTag.get(tag)
+        const transactions = []
+        if (vertices !== undefined) {
+            vertices.forEach((v) => transactions.push(v.transaction))
+        }
+        return transaction
+    }
+
+    const bestReferrerHash = () => { 
+        const tipsIterator = tips.values()
+        let v = tipsIterator.next().value
+
+        for (let i = 0; i < Math.floor(Math.random() * Math.floor(tips.size)); i++) {
+            v = tipsIterator.next().value
+        }
+
+        return v.hash
+    }
+
+    // Updates ratings of (in)directly referenced transactions.
+    const updateRating = (hash, weight = 1, ratedTransactions = new Set()) => {
+        if (!ratedTransactions.has(hash)) {
+            const v = get(hash)
             if (v !== undefined) {
-                return v.transaction
-            }
-        },
+                v.rating += weight
 
-        put(transaction) {
-            let v = verticesByHash.get(transaction.hash)
+                updateRating(v.transaction.trunkTransaction, weight, ratedTransactions)
 
-            if (v === undefined) {
-                v = vertex(transaction.hash, ++index)
-                verticesByHash.set(transaction.hash, v)
-
-                if (transaction.tailFlag === TRUE) {
-                    tips.add(v)
+                if (v.transaction.branchTransaction !== v.transaction.trunkTransaction) {
+                    updateRating(v.transaction.branchTransaction, weight, ratedTransactions)
                 }
             }
+        }
+    }
 
-            if (v.transaction !== undefined) {
-                return FALSE * v.index // seen tx
-            }
+    const clear = () => {
+        index = 0
+        verticesByHash.clear()
+        verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
+        verticesByAddress.clear()
+        verticesByTag.clear()
+        tips.clear()
+    }
 
-            v.transaction = transaction
+    const info = () => ({
+        size: verticesByHash.size,
+        numberOfTips: tips.size,
+    })
 
-            v.trunkVertex = verticesByHash.get(transaction.trunkTransaction)
-            if (v.trunkVertex === undefined) {
-                v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
-                verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
-            }
-            v.trunkVertex.referrers.add(v)
-            setTimeout(() => tips.delete(v.trunkVertex), artificialLatency)
-
-            if (transaction.trunkTransaction === transaction.branchTransaction) {
-                v.branchVertex = v.trunkVertex
-            } else {
-                v.branchVertex = verticesByHash.get(transaction.branchTransaction)
-                if (v.branchVertex === undefined) {
-                    v.branchVertex = vertex(transaction.branchTransaction, ++index)
-                    verticesByHash.set(transaction.branchTransaction, v.branchVertex)
-                }
-                v.branchVertex.referrers.add(v)
-                setTimeout(() => tips.delete(v.branchVertex), artificialLatency)
-            }
-
-            if (transaction.address !== NULL_HASH_TRYTES) {
-                let vertices = verticesByAddress.get(transaction.address)
-                if (vertices === undefined) {
-                    vertices = new Set()
-                    verticesByAddress.set(transaction.address, vertices)
-                }
-                vertices.add(v)
-            }
-
-            if (transaction.tag !== NULL_TAG_TRYTES) {
-                let vertices = verticesByTag.get(transaction.tag)
-                if (vertices === undefined) {
-                    vertices = new Set()
-                    verticesByTag.set(transaction.tag, vertices)
-                }
-                vertices.add(v)
-            }
-
-            pruneIfNeccessary()
-
-            return TRUE * v.index // New tx
-        },
-
-        bestReferrerHash() {
-            const tipsIterator = tips.values()
-            let v = tipsIterator.next().value
-
-            for (let i = 0; i < Math.floor(Math.random() * Math.floor(tips.size)); i++) {
-                v = tipsIterator.next().value
-            }
-
-            return v.hash
-        },
-
-        updateRating,
-
+    return { 
+        get,
         remove,
-
-        getTransactionsByAddress(address) {
-            const vertices = verticesByAddress.get(address)
-            const transactions = []
-            if (vertices !== undefined) {
-                vertices.forEach((v) => transactions.push(v.transaction))
-            }
-            return transactions
-        },
-
-        getTransactionsByTag(tag) {
-            const vertices = verticesByTag.get(tag)
-            const transactions = []
-            if (vertices !== undefined) {
-                vertices.forEach((v) => transactions.push(v.transaction))
-            }
-            return transactions
-        },
-
-        clear() {
-            index = 0
-            verticesByHash.clear()
-            verticesByHash.set(NULL_HASH_TRYTES, vertex(NULL_HASH_TRYTES, index++))
-            verticesByAddress.clear()
-            verticesByTag.clear()
-        },
-
-        info: () => ({
-            size: verticesByHash.size,
-            numberOfTips: tips.size,
-        }),
+        put,
+        getTransaction,
+        getTransactionsByAddress,
+        getTransactionsByTag,
+        bestReferrerHash,
+        updateRating,
+        clear,
+        info,
     }
 }
