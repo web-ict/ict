@@ -49,7 +49,7 @@ import { WebRTC_Peer, signalingClient } from '@web-ict/autopeering'
 import { MESSAGE_OR_SIGNATURE_LENGTH, NULL_TRANSACTION_HASH } from '@web-ict/transaction'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { integerValueToTrits, TRUE } from '@web-ict/converter'
-import { milestoning } from '@web-ict/milestoning'
+//import { milestoning } from '@web-ict/milestoning'
 
 import('@web-ict/curl').then(({ Curl729_27 }) => {
     const test = node({
@@ -74,7 +74,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
             B: 100,
         },
         subtangle: {
-            capacity: 1000, // In transactions
+            capacity: 100, // In transactions
             pruningScale: 0.1, // In proportion to capacity
             artificialLatency: 100, // Artificial latency in ms
         },
@@ -84,29 +84,29 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
     test.launch()
     test.ixi.listen((tx) => console.log(tx))
 
-    const state = { index: 0 }
-    const depth = 1
-    const { milestone, milestoneListener, root } = milestoning(
-        Curl729_27,
-        state,
-        test.ixi,
-        new Int8Array(243),
-        depth,
-        2
-    )
-    milestone(NULL_TRANSACTION_HASH, NULL_TRANSACTION_HASH)
+    //const state = { index: 0 }
+    //const depth = 1
+    //const { milestone, milestoneListener, root } = milestoning(
+    //    Curl729_27,
+    //    state,
+    //    test.ixi,
+    //    new Int8Array(243),
+    //    depth,
+    //    2
+    //)
+    //milestone(NULL_TRANSACTION_HASH, NULL_TRANSACTION_HASH)
 
-    const listener = milestoneListener()
-    listener.launch({
-        actors: [
-            {
-                address: root(),
-                depth,
-                security: 2,
-            },
-        ],
-        delay: 5000,
-    })
+    //const listener = milestoneListener()
+    //listener.launch({
+    //    actors: [
+    //        {
+    //            address: root(),
+    //            depth,
+    //            security: 2,
+    //        },
+    //   ],
+    //    delay: 5000,
+    //})
 
     setInterval(routine(test.ixi, Curl729_27), 100)
 
