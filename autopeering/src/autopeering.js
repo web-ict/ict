@@ -44,10 +44,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
+import { WebRTC_Peer } from './webrtc-peer.js'
+
 export const NUMBER_OF_PEERS = 3
 
-export const autopeering = (properties) => {
-    const { cooldownDuration, reconnectDelay, tiebreakerValue, tiebreakerIntervalDuration } = properties
+export const autopeering = (wrtc) => ({
+    signalingServers,
+    iceServers,
+    cooldownDuration,
+    tiebreakerIntervalDuration,
+    tiebreakerValue,
+}) => {
+    const webRTC_Peer = WebRTC_Peer(wrtc, { signalingServers, iceServers })
     const peers = Array(NUMBER_OF_PEERS)
     for (let i = 0; i < NUMBER_OF_PEERS; i++) {
         peers[i] = {}
@@ -103,16 +111,14 @@ export const autopeering = (properties) => {
                 const skip = () => {
                     if (reconnect === undefined) {
                         peer.terminate()
-                        reconnect = setTimeout(() => discover(peer), reconnectDelay)
+                        reconnect = setTimeout(() => discover(peer), 1)
                     }
                 }
 
-                const specialPeer = properties.peer(onopen, onpacket, skip)
+                const specialPeer = webRTC_Peer(onopen, onpacket, skip)
 
                 const terminate = () => {
-                    if (typeof specialPeer.terminate === 'function') {
-                        specialPeer.terminate()
-                    }
+                    specialPeer.terminate()
                     clearTimeout(reconnect)
                     clearInterval(heartbeat)
                     clearInterval(tiebreaker)
