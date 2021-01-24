@@ -44,116 +44,123 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-export const WebRTC_Peer = ({ iceServers, signalingChannel }) => (onopen, onpacket, skip) => {
-    let sc
-    let pc
-    let dc
+import { signalingClient } from './signaling-client.js'
 
-    const onmessage = ({ data }) => onpacket(data)
+export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
+    const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc
+    const signalingChannel = signalingClient({ signalingServers })
 
-    const onclose = () => skip()
+    return (onopen, onpacket, skip) => {
+        let sc
+        let pc
+        let dc
 
-    sc = signalingChannel((signal) => {
-        const { caller, description, candidate } = signal
+        const onmessage = ({ data }) => onpacket(data)
 
-        if (caller !== undefined) {
-            pc = new RTCPeerConnection({ iceServers })
+        const onclose = () => skip()
 
-            pc.oniceconnectionstatechange = () => {
-                if (
-                    pc &&
-                    (pc.iceConnectionState === 'failed' ||
-                        pc.iceConnectionState === 'disconnected' ||
-                        pc.iceConnectionState === 'closed')
-                ) {
-                    skip()
+        sc = signalingChannel((signal) => {
+            const { caller, description, candidate } = signal
+
+            if (caller !== undefined) {
+                pc = new RTCPeerConnection({ iceServers })
+
+                pc.oniceconnectionstatechange = () => {
+                    if (
+                        pc &&
+                        (pc.iceConnectionState === 'failed' ||
+                            pc.iceConnectionState === 'disconnected' ||
+                            pc.iceConnectionState === 'closed')
+                    ) {
+                        skip()
+                    }
                 }
-            }
 
-            pc.ondatachannel = ({ channel }) => {
-                dc = channel
-                dc.binaryType = 'arraybuffer'
-                dc.onopen = onopen
-                dc.onmessage = onmessage
-                dc.onclose = onclose
-            }
+                pc.ondatachannel = ({ channel }) => {
+                    dc = channel
+                    dc.binaryType = 'arraybuffer'
+                    dc.onopen = onopen
+                    dc.onmessage = onmessage
+                    dc.onclose = onclose
+                }
 
-            pc.onicecandidate = ({ candidate }) => !candidate || sc.send({ candidate })
+                pc.onicecandidate = ({ candidate }) => !candidate || sc.send({ candidate })
 
-            pc.onnegotiationneeded = () =>
-                // Caller issues SDP offer
-                pc
-                    .createOffer()
-                    .then((offer) => pc.setLocalDescription(offer))
-                    .then(() =>
-                        sc.send({
-                            description: pc.localDescription,
-                        })
+                pc.onnegotiationneeded = () =>
+                    // Caller issues SDP offer
+                    pc
+                        .createOffer()
+                        .then((offer) => pc.setLocalDescription(offer))
+                        .then(() =>
+                            sc.send({
+                                description: pc.localDescription,
+                            })
+                        )
+                        .catch(console.log)
+
+                if (caller) {
+                    dc = pc.createDataChannel('ict', {
+                        // udp semantics
+                        ordered: false,
+                        maxRetransmits: 0,
+                    })
+                    dc.binaryType = 'arraybuffer'
+                    dc.onopen = onopen
+                    dc.onmessage = onmessage
+                    dc.onclose = onclose
+                }
+            } else if (description) {
+                if (description.type === 'offer') {
+                    ;(pc.signalingState !== 'stable'
+                        ? Promise.all([
+                              pc.setLocalDescription({
+                                  type: 'rollback',
+                              }),
+                              pc.setRemoteDescription(new RTCSessionDescription(description)),
+                          ])
+                        : pc.setRemoteDescription(new RTCSessionDescription(description))
                     )
-                    .catch(console.log)
+                        .then(() =>
+                            // Callee anwsers SDP offer
+                            pc.createAnswer().then((answer) => pc.setLocalDescription(answer))
+                        )
+                        .then(() =>
+                            sc.send({
+                                description: pc.localDescription,
+                            })
+                        )
+                        .catch(console.log)
+                } else if (description.type === 'answer') {
+                    pc.setRemoteDescription(new RTCSessionDescription(description)).catch(console.log)
+                }
+                return
+            }
 
-            if (caller) {
-                dc = pc.createDataChannel('ict', {
-                    // udp semantics
-                    ordered: false,
-                    maxRetransmits: 0,
-                })
-                dc.binaryType = 'arraybuffer'
-                dc.onopen = onopen
-                dc.onmessage = onmessage
-                dc.onclose = onclose
+            if (candidate) {
+                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.log)
+                return
             }
-        } else if (description) {
-            if (description.type === 'offer') {
-                ;(pc.signalingState !== 'stable'
-                    ? Promise.all([
-                          pc.setLocalDescription({
-                              type: 'rollback',
-                          }),
-                          pc.setRemoteDescription(new RTCSessionDescription(description)),
-                      ])
-                    : pc.setRemoteDescription(new RTCSessionDescription(description))
-                )
-                    .then(() =>
-                        // Callee anwsers SDP offer
-                        pc.createAnswer().then((answer) => pc.setLocalDescription(answer))
-                    )
-                    .then(() =>
-                        sc.send({
-                            description: pc.localDescription,
-                        })
-                    )
-                    .catch(console.log)
-            } else if (description.type === 'answer') {
-                pc.setRemoteDescription(new RTCSessionDescription(description)).catch(console.log)
-            }
-            return
+        })
+
+        return {
+            terminate() {
+                if (dc !== undefined) {
+                    dc.close()
+                }
+                if (pc !== undefined) {
+                    pc.close()
+                }
+                if (sc !== undefined) {
+                    sc.close()
+                }
+            },
+            send(packet) {
+                if (dc !== undefined && dc.readyState === 'open') {
+                    dc.send(packet)
+                    return true
+                }
+                return false
+            },
         }
-
-        if (candidate) {
-            pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.log)
-            return
-        }
-    })
-
-    return {
-        terminate() {
-            if (dc !== undefined) {
-                dc.close()
-            }
-            if (pc !== undefined) {
-                pc.close()
-            }
-            if (sc !== undefined) {
-                sc.close()
-            }
-        },
-        send(packet) {
-            if (dc !== undefined && dc.readyState === 'open') {
-                dc.send(packet)
-                return true
-            }
-            return false
-        },
     }
 }

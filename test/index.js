@@ -44,26 +44,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { node } from '@web-ict/node'
-import { WebRTC_Peer, signalingClient } from '@web-ict/autopeering'
-import { MESSAGE_OR_SIGNATURE_LENGTH, NULL_TRANSACTION_HASH } from '@web-ict/transaction'
+import { ICT } from '@web-ict/ict'
+import { MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { integerValueToTrits, TRUE } from '@web-ict/converter'
 //import { milestoning } from '@web-ict/milestoning'
 
 import('@web-ict/curl').then(({ Curl729_27 }) => {
-    const test = node({
+    const test = ICT({
         autopeering: {
-            peer: WebRTC_Peer({
-                iceServers: [
-                    {
-                        urls: ['stun:stun3.l.google.com:19302'],
-                    },
-                ],
-                signalingChannel: signalingClient({
-                    signalingServers: ['ws://localhost:3030', 'ws://localhost:3030', 'ws://localhost:3030'],
-                }),
-            }),
+            iceServers: [
+                {
+                    urls: ['stun:stun3.l.google.com:19302'],
+                },
+            ],
+            signalingServers: ['ws://localhost:8080', 'ws://localhost:8080', 'ws://localhost:8080'],
             cooldownDuration: 10, // In seconds
             reconnectDelay: 1,
             tiebreakerIntervalDuration: 10,
@@ -82,7 +77,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
     })
 
     test.launch()
-    test.ixi.listen((tx) => console.log(tx))
+    //test.ixi.listen((tx) => console.log(tx))
 
     //const state = { index: 0 }
     //const depth = 1
@@ -95,7 +90,6 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
     //    2
     //)
     //milestone(NULL_TRANSACTION_HASH, NULL_TRANSACTION_HASH)
-
     //const listener = milestoneListener()
     //listener.launch({
     //    actors: [

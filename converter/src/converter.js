@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import * as bigInt from 'big-integer'
+import bigInt from 'big-integer'
 
 export const RADIX = 3
 export const MAX_TRIT_VALUE = (RADIX - 1) / 2

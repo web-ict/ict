@@ -61,7 +61,7 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
                 let b = buffer[i]
                 if (b.closed) {
                     buffer.splice(i, 1)
-                } else if (b.remoteAddress !== a.remoteAddress) {
+                } /*if (b.remoteAddress !== a.remoteAddress)*/ else {
                     buffer.splice(i, 1)
                     // Assign roles
                     a.caller = true // Caller issues SDP offer

@@ -64,13 +64,12 @@ import {
     UNKNOWN,
 } from '@web-ict/converter'
 
-export const node = function (properties) {
+export const ICT = function (properties) {
     const { Curl729_27 } = properties
     const peering = autopeering(properties.autopeering)
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
     const subtangle = tangle(properties.subtangle)
-    let listener
     let numberOfInboundTransactions
     let numberOfOutboundTransactions
     let numberOfNewTransactions
@@ -86,12 +85,7 @@ export const node = function (properties) {
             return UNKNOWN
         }
 
-        if (typeof listener === 'function') {
-            listener(tx)
-        }
-
         const i = subtangle.put(tx)
-
         if (i > UNKNOWN) {
             // New tx
             numberOfInboundTransactions++
@@ -178,9 +172,6 @@ export const node = function (properties) {
             peering.launch(receive)
         },
         ixi: {
-            listen: (fn) => {
-                listener = fn
-            },
             getTransactionsToApprove: (trits) => {
                 trytesToTrits(subtangle.bestReferrerHash(), trits, TRUNK_TRANSACTION_OFFSET)
                 trytesToTrits(subtangle.bestReferrerHash(), trits, BRANCH_TRANSACTION_OFFSET)
@@ -197,7 +188,7 @@ export const node = function (properties) {
         terminate() {
             peering.terminate()
             disseminator.terminate()
-            tangle.clear()
+            subtangle.clear()
         },
     }
 }
