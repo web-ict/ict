@@ -117,7 +117,6 @@ export const ICT = function (properties) {
                 peer.numberOfOutboundTransactions++
             }
         })
-        numberOfOutboundTransactions++
     }
 
     const receive = (packet, peer) => {

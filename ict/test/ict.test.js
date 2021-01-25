@@ -57,7 +57,7 @@ tap.test('ict', async (t) => {
     t.equal(nodeA.info().numberOfIxiTransactions, 1)
     t.equal(nodeA.info().numberOfInboundTransactions, 1)
 
-    t.equal((await info(nodeA, 1000)).numberOfOutboundTransactions, 4)
+    t.equal((await info(nodeA, 1000)).numberOfOutboundTransactions, 3)
     t.equal((await info(nodeB, 1000)).numberOfInboundTransactions, 3)
 
     t.end()
