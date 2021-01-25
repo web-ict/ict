@@ -33,11 +33,13 @@ const properties = {
 const ict = ICT(properties)
 ict.launch()
 
-const trits = transactionTrits({})
-ict.ixi.getTransactionsToApprove(trits)
-updateTransactionNonce(Curl729_27)(trits, 1, 1, 1, 1000)
+setInterval(() => {
+    const trits = transactionTrits({})
+    ict.ixi.getTransactionsToApprove(trits)
+    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1, 1000)
 
-ict.ixi.entangle(trits)
+    ict.ixi.entangle(trits)
+}, 1000)
 
 setInterval(() => {
     const info = ict.info()
