@@ -1,5 +1,5 @@
 {
-    "name": "@web-ict/iss",
+    "name": "@web-ict/persistence",
     "version": "0.0.0-beta.7",
     "description": "",
     "publishConfig": {
@@ -10,25 +10,22 @@
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",
-        "test": "tap --no-esm"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "Chris Dukakis",
     "repository": {
         "type": "git",
-        "url": "https://github.com/web-ict/iss"
+        "url": "https://github.com/web-ict/ict",
+        "directory": "persistence"
     },
     "dependencies": {
-        "@web-ict/converter": "^0.0.0-beta.7",
-        "@web-ict/transaction": "^0.0.0-beta.7"
+        "@web-ict/async-buffer": "^0.0.0-beta.7",
+        "level": "^6.0.1"
     },
     "devDependencies": {
-        "@web-ict/curl": "^0.0.0-beta.7",
-        "@web-ict/persistence": "^0.0.0-beta.7",
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
-        "prettier": "^2.0.2",
-        "rimraf": "^3.0.2",
-        "tap": "^14.11.0"
+        "prettier": "^2.0.2"
     },
     "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
 }

@@ -13,6 +13,7 @@ export {
     digest,
     signatureFragment,
     validateSignatures,
+    bundleTrytes,
     getMerkleRoot,
     merkleTree,
     iss,
