@@ -46,23 +46,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { autopeering } from '@web-ict/autopeering'
 import { dissemination } from '@web-ict/dissemination'
+import { IXI } from '@web-ict/ixi'
 import { tangle } from '@web-ict/tangle'
-import {
-    transaction,
-    TRANSACTION_LENGTH,
-    HASH_LENGTH,
-    TRUNK_TRANSACTION_OFFSET,
-    BRANCH_TRANSACTION_OFFSET,
-} from '@web-ict/transaction'
-import {
-    trytesToTrits,
-    sizeInBytes,
-    lengthInTrits,
-    bytesToTrits,
-    tritsToBytes,
-    FALSE,
-    UNKNOWN,
-} from '@web-ict/converter'
+import { transaction, TRANSACTION_LENGTH, HASH_LENGTH } from '@web-ict/transaction'
+import { sizeInBytes, lengthInTrits, bytesToTrits, tritsToBytes, FALSE, UNKNOWN } from '@web-ict/converter'
 
 export const ICT = function (properties) {
     const { Curl729_27 } = properties
@@ -70,11 +57,11 @@ export const ICT = function (properties) {
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
     const subtangle = tangle(properties.subtangle)
+    const listeners = new Set()
     let numberOfInboundTransactions
     let numberOfOutboundTransactions
     let numberOfNewTransactions
     let numberOfInvalidTransactions
-    let numberOfIxiTransactions
 
     const entangle = (trits) => {
         const tx = transaction(Curl729_27, trits)
@@ -91,6 +78,7 @@ export const ICT = function (properties) {
             numberOfInboundTransactions++
             numberOfNewTransactions++
             disseminator.postMessage(i, trits)
+            listeners.forEach((fn) => fn(tx))
         } else {
             // Seen tx
             numberOfInboundTransactions++
@@ -147,7 +135,6 @@ export const ICT = function (properties) {
             numberOfNewTransactions,
             numberOfSeenTransactions: numberOfInboundTransactions - numberOfNewTransactions,
             numberOfInvalidTransactions,
-            numberOfIxiTransactions,
             numberOfTransactionsToPropagate: disseminator.info(),
             subtangle: subtangle.info(),
             peers: peers.map((peer) => ({
@@ -166,24 +153,10 @@ export const ICT = function (properties) {
             numberOfOutboundTransactions = 0
             numberOfNewTransactions = 0
             numberOfInvalidTransactions = 0
-            numberOfIxiTransactions = 0
             disseminator.launch(send)
             peering.launch(receive)
         },
-        ixi: {
-            getTransactionsToApprove: (trits) => {
-                trytesToTrits(subtangle.bestReferrerHash(), trits, TRUNK_TRANSACTION_OFFSET)
-                trytesToTrits(subtangle.bestReferrerHash(), trits, BRANCH_TRANSACTION_OFFSET)
-            },
-            getTransaction: subtangle.getTransaction,
-            getTransactionsByAddress: subtangle.getTransactionsByAddress,
-            getTransactionsByTag: subtangle.getTransactionsByTag,
-            updateSubtangleRating: subtangle.updateRating,
-            entangle: (trits) => {
-                numberOfIxiTransactions++
-                entangle(trits)
-            },
-        },
+        ixi: IXI(subtangle, entangle, listeners),
         terminate() {
             peering.terminate()
             disseminator.terminate()

@@ -123,7 +123,6 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
         logCount('number-of-new-transactions', info.numberOfNewTransactions)
         logCount('number-of-seen-transactions', info.numberOfSeenTransactions)
         logCount('number-of-invalid-transactions', info.numberOfInvalidTransactions)
-        logCount('number-of-ixi-transactions', info.numberOfIxiTransactions)
         logCount('number-of-transactions-to-propagate', info.numberOfTransactionsToPropagate)
 
         requestAnimationFrame(step)
