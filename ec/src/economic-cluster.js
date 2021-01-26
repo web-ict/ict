@@ -4,9 +4,58 @@ import { integerValue, trytes, trytesToTrits } from '@web-ict/converter'
 import { INDEX_OFFSET, INDEX_LENGTH, CONFIDENCE_OFFSET, CONFIDENCE_LENGTH, SIBLINGS_OFFSET } from '../index.js'
 
 export const economicCluster = ({ intervalDuration, ixi }) => {
-    const actors = new Set()
     const iss = ISS(Curl729_27)
+    const actors = new Set()
+    const missingTransactions = new Map()
     let interval
+
+    const updateConfidence = (actor, hash, ratedTransactions = new Set()) => {
+        let N = 0
+        actors.forEach(({ weight }) => (N += weight))
+
+        const f = (hash) => {
+            const vertex = ixi.get(hash)
+
+            if (vertex) {
+                if (vertex.transaction === undefined) {
+                    missingTransactions.set(hash, ratedTransactions)
+                } else if (!ratedTransactions.has(vertex.hash)) {
+                    let M = 0
+
+                    if (vertex.weights === undefined) {
+                        vertex.weights = new Map()
+                    }
+
+                    if (actor.removed) {
+                        vertex.weights.delete(actor)
+                    } else {
+                        vertex.weights.set(actor, actor.confidence * actor.weight)
+                    }
+
+                    vertex.weights.forEach((weight) => (M += weight))
+                    vertex.confidence = vertex.transaction.confidence = M / N
+
+                    ratedTransactions.add(vertex.hash)
+
+                    f(vertex.trunkVertex.hash)
+
+                    if (vertex.branchVertex.hash !== vertex.trunkVertex.hash) {
+                        f(vertex.branchVertex.hash)
+                    }
+                }
+            }
+        }
+
+        f(hash || actor.latestMilestone)
+    }
+
+    const transactionListener = (transaction) => {
+        if (missingTransactions.has(transaction.hash)) {
+            const ratedTransactions = missingTransactions.get(transaction.hash)
+            missingTransactions.delete(transaction.hash)
+            actors.forEach((actor) => updateConfidence(actor, transaction.hash, ratedTransactions))
+        }
+    }
 
     const milestoneListener = () => {
         actors.forEach((actor) =>
@@ -56,6 +105,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
                                 CONFIDENCE_OFFSET,
                                 CONFIDENCE_LENGTH
                             )
+                            updateConfidence(actor)
                         }
                     }
                 })
@@ -65,9 +115,11 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
     return {
         launch() {
             interval = setInterval(milestoneListener, intervalDuration)
+            ixi.addListener(transactionListener)
         },
         terminate() {
             clearInterval(interval)
+            ixi.removeListener(transactionListener)
         },
         addEconomicActor(actor) {
             actor.latestMilestoneIndex = -1
@@ -76,6 +128,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
         removeEconomicActor(actor) {
             actors.delete(actor)
             actor.removed = true
+            updateConfidence(actor)
         },
         info: () => {
             const actorsInfo = []
