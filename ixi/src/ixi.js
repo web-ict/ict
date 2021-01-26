@@ -74,6 +74,7 @@ export const IXI = (subtangle, entangle, listeners) => {
         removeListener: (fn) => {
             listeners.delete(fn)
         },
+        get: subtangle.get,
         getTransaction: subtangle.getTransaction,
         getTransactionsByAddress: subtangle.getTransactionsByAddress,
         getTransactionsByTag: subtangle.getTransactionsByTag,

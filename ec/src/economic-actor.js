@@ -48,8 +48,8 @@ import { ISS, BUNDLE_FRAGMENT_TRYTE_LENGTH, KEY_SIGNATURE_FRAGMENT_LENGTH } from
 import { Curl729_27 } from '@web-ict/curl'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { NUMBER_OF_TIMESTAMPS, TIMESTAMP_LENGTH, TIMESTAMP_OFFSET } from '@web-ict/timestamping'
-import { MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
-import { integerValueToTrits, TRUE, FALSE, UNKNOWN } from '@web-ict/converter'
+import { HASH_LENGTH, MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
+import { integerValueToTrits, trytes, TRUE, FALSE, UNKNOWN } from '@web-ict/converter'
 import { persistence } from '@web-ict/persistence'
 import fs from 'fs'
 
@@ -82,7 +82,7 @@ export const economicActor = ({
 
         const index = await increment()
 
-        if (index > 2 ** depth) {
+        if (index >= 2 ** depth) {
             clearInterval(interval)
             return
         }
@@ -145,6 +145,9 @@ export const economicActor = ({
         },
         terminate() {
             clearInterval(interval)
+        },
+        address() {
+            return trytes(root.address, 0, HASH_LENGTH)
         },
     }
 }

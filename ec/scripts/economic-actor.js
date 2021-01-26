@@ -35,7 +35,7 @@ const actor = economicActor({
     persistenceId: 'milestone_index',
     merkleTreeFile: './merkleTree.json',
     seed: new Int8Array(243),
-    depth: 9,
+    depth: 12,
     security: 1,
     milestoneIntervalDuration: 20 * 1000,
     ixi: ict.ixi,
@@ -43,3 +43,4 @@ const actor = economicActor({
 
 ict.launch()
 actor.launch()
+console.log(actor.address())

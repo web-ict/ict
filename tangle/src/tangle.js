@@ -53,7 +53,7 @@ const vertex = (hash, index) => ({
     branchVertex: undefined,
     trunkVertex: undefined,
     referrers: new Set(),
-    rating: 0,
+    confidence: 0,
 })
 
 export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
@@ -119,7 +119,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
             for (let i = 0; i < Math.min(pruningScale, 1) * capacity; i++) {
                 const v = verticesIterator.next().value
-                if (v !== undefined && v.rating < min.rating) {
+                if (v !== undefined && v.confidence < min.confidence) {
                     min = v
                 }
             }
@@ -228,22 +228,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         return hash
     }
 
-    // Updates ratings of (in)directly referenced transactions.
-    const updateRating = (hash, weight = 1, ratedTransactions = new Set()) => {
-        if (!ratedTransactions.has(hash)) {
-            const v = get(hash)
-            if (v !== undefined) {
-                v.rating += weight
-
-                updateRating(v.transaction.trunkTransaction, weight, ratedTransactions)
-
-                if (v.transaction.branchTransaction !== v.transaction.trunkTransaction) {
-                    updateRating(v.transaction.branchTransaction, weight, ratedTransactions)
-                }
-            }
-        }
-    }
-
     const clear = () => {
         index = 0
         verticesByHash.clear()
@@ -266,7 +250,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         getTransactionsByAddress,
         getTransactionsByTag,
         bestReferrerHash,
-        updateRating,
         clear,
         info,
     }
