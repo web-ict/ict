@@ -29,7 +29,13 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
                     if (actor.removed) {
                         vertex.weights.delete(actor)
                     } else {
-                        vertex.weights.set(actor, actor.confidence * actor.weight)
+                        const a = vertex.weights.get(actor) || 0
+                        const b = actor.confidence * actor.weight
+                        if (a < b) {
+                            vertex.weights.set(actor, b)
+                        } else {
+                            return
+                        }
                     }
 
                     vertex.weights.forEach((weight) => (M += weight))
