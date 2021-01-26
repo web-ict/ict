@@ -9,7 +9,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
     const missingTransactions = new Map()
     let interval
 
-    const updateConfidence = (actor, hash, ratedTransactions = new Set()) => {
+    const updateConfidence = (actor, hash, ratedTransactions = new Set(), confidence) => {
         let N = 0
         actors.forEach(({ weight }) => (N += weight))
 
@@ -18,7 +18,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
 
             if (vertex) {
                 if (vertex.transaction === undefined) {
-                    missingTransactions.set(hash, ratedTransactions)
+                    missingTransactions.set(hash, { ratedTransactions, confidence: actor.confidence })
                 } else if (!ratedTransactions.has(vertex.hash)) {
                     let M = 0
 
@@ -30,7 +30,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
                         vertex.weights.delete(actor)
                     } else {
                         const a = vertex.weights.get(actor) || 0
-                        const b = actor.confidence * actor.weight
+                        const b = (confidence || actor.confidence) * actor.weight
                         if (a < b) {
                             vertex.weights.set(actor, b)
                         } else {
@@ -57,9 +57,9 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
 
     const transactionListener = (transaction) => {
         if (missingTransactions.has(transaction.hash)) {
-            const ratedTransactions = missingTransactions.get(transaction.hash)
+            const { ratedTransactions, confidence } = missingTransactions.get(transaction.hash)
             missingTransactions.delete(transaction.hash)
-            actors.forEach((actor) => updateConfidence(actor, transaction.hash, ratedTransactions))
+            actors.forEach((actor) => updateConfidence(actor, transaction.hash, ratedTransactions, confidence))
         }
     }
 
