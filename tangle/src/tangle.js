@@ -44,8 +44,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { NULL_TRANSACTION_HASH_TRYTES, NULL_HASH_TRYTES, NULL_TAG_TRYTES } from '@web-ict/transaction'
-import { FALSE, TRUE } from '@web-ict/converter'
+import { NULL_TRANSACTION_HASH_TRYTES, NULL_HASH_TRYTES, NULL_TAG_TRYTES, HASH_LENGTH } from '@web-ict/transaction'
+import { FALSE, TRUE, trytesToTrits } from '@web-ict/converter'
 
 const vertex = (hash, index) => ({
     hash,
@@ -63,7 +63,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const verticesByTag = new Map()
     const tips = new Set()
 
-    const get = hash => verticesByHash.get(hash)
+    const get = (hash) => verticesByHash.get(hash)
 
     verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
     tips.add(get(NULL_TRANSACTION_HASH_TRYTES))
@@ -106,7 +106,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
             v.branchVertex.referrers.delete(v)
             if (v.branchVertex.referrers.size === 0) {
                 verticesByHash.delete(v.branchVertex.hash)
-            } 
+            }
         }
     }
 
@@ -128,8 +128,8 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         }
     }
 
-    const put = transaction => {
-       let v = get(transaction.hash)
+    const put = (transaction) => {
+        let v = get(transaction.hash)
 
         if (v === undefined) {
             v = vertex(transaction.hash, ++index)
@@ -188,7 +188,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
         return TRUE * v.index // New tx
     }
-    
+
     const getTransaction = (hash) => {
         const v = get(hash)
         if (v !== undefined) {
@@ -202,7 +202,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         if (vertices !== undefined) {
             vertices.forEach((v) => transactions.push(v.transaction))
         }
-        return transaction
+        return transactions
     }
 
     const getTransactionsByTag = (tag) => {
@@ -211,10 +211,10 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         if (vertices !== undefined) {
             vertices.forEach((v) => transactions.push(v.transaction))
         }
-        return transaction
+        return transactions
     }
 
-    const bestReferrerHash = () => { 
+    const bestReferrerHash = () => {
         const tipsIterator = tips.values()
         let v = tipsIterator.next().value
 
@@ -222,7 +222,10 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
             v = tipsIterator.next().value
         }
 
-        return v.hash
+        const hash = new Int8Array(HASH_LENGTH)
+        trytesToTrits(v.hash, hash, 0)
+
+        return hash
     }
 
     // Updates ratings of (in)directly referenced transactions.
@@ -255,7 +258,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         numberOfTips: tips.size,
     })
 
-    return { 
+    return {
         get,
         remove,
         put,

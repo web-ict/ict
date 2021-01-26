@@ -10,7 +10,7 @@
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",
-        "test": "tap --no-esm"
+        "test": "tap --no-esm --no-timeout"
     },
     "author": "Chris Dukakis",
     "repository": {

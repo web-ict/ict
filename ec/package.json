@@ -1,5 +1,5 @@
 {
-    "name": "@web-ict/milestoning",
+    "name": "@web-ict/ec",
     "version": "0.0.0-beta.8",
     "description": "",
     "publishConfig": {
@@ -10,7 +10,8 @@
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "compute-merkle-tree": "node ./scripts/compute-merkle-tree.js"
     },
     "author": "Chris Dukakis",
     "repository": {
@@ -18,13 +19,19 @@
         "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
+        "@web-ict/curl": "^0.0.0-beta.7",
         "@web-ict/iss": "^0.0.0-beta.7",
         "@web-ict/bundle": "^0.0.0-beta.7",
         "@web-ict/timestamping": "^0.0.0-beta.7",
         "@web-ict/converter": "^0.0.0-beta.7",
-        "@web-ict/transaction": "^0.0.0-beta.7"
+        "@web-ict/transaction": "^0.0.0-beta.7",
+        "@web-ict/persistence": "^0.0.0-beta.7"
+    },
+    "peerDependencies": {
+        "@web-ict/ict": "^0.0.0-beta.7"
     },
     "devDependencies": {
+        "@web-ict/ict": "^0.0.0-beta.7",
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
         "prettier": "^2.0.2"

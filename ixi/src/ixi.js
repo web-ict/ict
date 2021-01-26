@@ -45,7 +45,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET } from '@web-ict/transaction'
-import { trytesToTrits, TRUE } from '@web-ict/converter'
+import { TRUE } from '@web-ict/converter'
 
 export const IXI = (subtangle, entangle, listeners) => {
     const collectBundle = (transaction, bundle = []) => {
@@ -83,11 +83,13 @@ export const IXI = (subtangle, entangle, listeners) => {
                 .getTransactionsByAddress(address)
                 .filter(({ tailFlag }) => tailFlag === TRUE)
                 .map((transaction) => collectBundle(transaction))
+                .filter((bundle) => bundle.length > 0)
         },
         getTransactionsToApprove: (trits) => {
-            trytesToTrits(subtangle.bestReferrerHash(), trits, TRUNK_TRANSACTION_OFFSET)
-            trytesToTrits(subtangle.bestReferrerHash(), trits, BRANCH_TRANSACTION_OFFSET)
+            trits.set(subtangle.bestReferrerHash(), TRUNK_TRANSACTION_OFFSET)
+            trits.set(subtangle.bestReferrerHash(), BRANCH_TRANSACTION_OFFSET)
         },
+        bestReferrerHash: subtangle.bestReferrerHash,
         entangle,
     }
 }
