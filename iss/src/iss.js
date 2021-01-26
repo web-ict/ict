@@ -47,12 +47,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import { add } from './add.js'
 import { integerValueToTrits, RADIX, TRITS_PER_TRYTE } from '@web-ict/converter'
 
-const HASH_LENGTH = 243
+export const HASH_LENGTH = 243
 
 export const NUMBER_OF_SECURITY_LEVELS = 3
 export const MAX_TRYTE_VALUE = 13
 export const MIN_TRYTE_VALUE = -MAX_TRYTE_VALUE
 export const BUNDLE_FRAGMENT_LENGTH = HASH_LENGTH / NUMBER_OF_SECURITY_LEVELS
+export const BUNDLE_FRAGMENT_TRYTE_LENGTH = BUNDLE_FRAGMENT_LENGTH / TRITS_PER_TRYTE
 export const KEY_SIGNATURE_FRAGMENT_LENGTH = (BUNDLE_FRAGMENT_LENGTH / TRITS_PER_TRYTE) * HASH_LENGTH
 export const SECURITY_LEVEL_TRITS = [2, 0, 1, -1]
 export const SECURITY_LEVEL_OFFSET = 0
@@ -211,10 +212,7 @@ export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFra
     const bundleFragments = []
 
     for (let i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-        bundleFragments[i] = bundle.slice(
-            (i * KEY_SIGNATURE_FRAGMENT_LENGTH) / HASH_LENGTH,
-            ((i + 1) * KEY_SIGNATURE_FRAGMENT_LENGTH) / HASH_LENGTH
-        )
+        bundleFragments[i] = bundle.slice(i * BUNDLE_FRAGMENT_TRYTE_LENGTH, (i + 1) * BUNDLE_FRAGMENT_TRYTE_LENGTH)
     }
 
     const digestsTrits = new Int8Array(signatureFragments.length * HASH_LENGTH)
@@ -238,7 +236,7 @@ export const validateSignatures = (Curl729_27) => (expectedAddress, signatureFra
 }
 
 export const bundleTrytes = (bundle, security) => {
-    const output = new Int8Array(security * (HASH_LENGTH / TRITS_PER_TRYTE / NUMBER_OF_SECURITY_LEVELS))
+    const output = new Int8Array(security * BUNDLE_FRAGMENT_TRYTE_LENGTH)
 
     for (let i = 0; i < output.length; i++) {
         output[i] =
@@ -267,96 +265,98 @@ export const getMerkleRoot = (Curl729_27) => (hash, trits, index, depth) => {
     return hash
 }
 
-export const merkleTree = (Curl729_27) => (seed, start, depth, security) => {
-    const pair = (seed, index) => {
-        const keyTrits = key(Curl729_27)(subseed(Curl729_27)(seed, index), security)
-        const digestsTrits = digests(Curl729_27)(keyTrits)
-        const hash = addressFromDigests(Curl729_27)(digestsTrits)
+export const getMerkleProof = (root, index) => {
+    const leaves = []
+    let node = root
+    let size = root.size
+    let leafIndex
 
-        return {
-            key: keyTrits,
-            hash,
-            size: 1,
+    if (index < size) {
+        while (node !== undefined) {
+            if (node.left === undefined) {
+                leafIndex = node.leafIndex
+                break
+            }
+
+            size = node.left.size
+            if (index < size) {
+                leaves.push(node.right ? node.right : node.left)
+                node = node.left
+            } else {
+                leaves.push(node.left)
+                node = node.right
+                index -= size
+            }
         }
     }
 
-    const merkleNode = (left, right, curl) => {
-        const hash = new Int8Array(HASH_LENGTH)
-        curl.reset(HASH_LENGTH)
-        curl.absorb(left.hash, 0, HASH_LENGTH)
-        curl.absorb(right === undefined ? left.hash : right.hash, 0, HASH_LENGTH)
-        curl.squeeze(hash, 0, HASH_LENGTH)
+    leaves.reverse()
 
-        return {
-            hash,
-            left,
-            right,
-            size: left.size + (right === undefined ? 0 : right.size),
-        }
+    const siblings = new Int8Array(leaves.length * HASH_LENGTH)
+    for (let i = 0; i < leaves.length; i++) {
+        siblings.set(leaves[i].address, i * HASH_LENGTH)
     }
-
-    const computeMerkleTree = (nodes) => {
-        const subnodes = []
-        const curl = new Curl729_27(HASH_LENGTH)
-        while (nodes.length != 0) {
-            subnodes.push(merkleNode(nodes.shift(), nodes.shift(), curl))
-        }
-        if (subnodes.length == 1) {
-            return subnodes[0]
-        }
-        return computeMerkleTree(subnodes)
-    }
-
-    const pairs = []
-    const count = 2 ** depth
-    const end = start + count
-
-    for (let i = start; i < end; i++) {
-        pairs.push(pair(seed, i))
-    }
-
-    const root = computeMerkleTree(pairs)
 
     return {
-        root: root.hash,
-        get: (index) => {
-            const tree = []
-            let node = root
-            let key
-            let size = node.size
-            if (index < size) {
-                while (node !== undefined) {
-                    if (node.left === undefined) {
-                        key = node
-                        break
-                    }
-                    size = node.left.size
-                    if (index < size) {
-                        if (node.right !== undefined) {
-                            tree.unshift(node.right)
-                        } else {
-                            tree.unshift(node.left)
-                        }
-                        node = node.left
-                    } else {
-                        tree.unshift(node.left)
-                        node = node.right
-                        index -= size
-                    }
-                }
-            }
-            return {
-                key: key.key,
-                siblings: tree.reduce((acc, { hash }, i) => {
-                    acc.set(hash, i * HASH_LENGTH)
-                    return acc
-                }, new Int8Array(depth * HASH_LENGTH)),
-            }
-        },
+        leafIndex,
+        siblings,
     }
 }
 
-export const iss = (Curl729_27, increment) => ({
+export const merkleTree = (Curl729_27, increment) => async (seed, depth, security) => {
+    const leaves = []
+    const count = 2 ** depth
+    const start = await increment(count)
+
+    for (let i = 0; i < count; i++) {
+        const leafIndex = start + i
+        const keyTrits = key(Curl729_27)(subseed(Curl729_27)(seed, start + i), security)
+        const addressTrits = Array.from(addressFromDigests(Curl729_27)(digests(Curl729_27)(keyTrits)))
+
+        leaves.push({
+            address: addressTrits,
+            leafIndex,
+            size: 1,
+        })
+    }
+
+    const tree = (leaves) => {
+        const subnodes = []
+
+        for (let i = 0; i < leaves.length; i += 2) {
+            const left = leaves[i]
+            const right = i + 1 < leaves.length ? leaves[i + 1] : undefined
+            let addressTrits
+
+            if (right) {
+                const curl = new Curl729_27(HASH_LENGTH)
+                curl.absorb(Int8Array.from(left.address), 0, HASH_LENGTH)
+                curl.absorb(Int8Array.from(right.address), 0, HASH_LENGTH)
+                addressTrits = new Int8Array(HASH_LENGTH)
+                curl.squeeze(addressTrits, 0, addressTrits.length)
+            } else {
+                addressTrits = left.addressTrits
+            }
+
+            subnodes.push({
+                left,
+                right,
+                size: (left ? left.size : 0) + (right ? right.size : 0),
+                address: Array.from(addressTrits),
+            })
+        }
+
+        if (subnodes.length === 1) {
+            return subnodes[0]
+        }
+
+        return tree(subnodes)
+    }
+
+    return tree(leaves)
+}
+
+export const ISS = (Curl729_27, increment) => ({
     subseed: subseed(Curl729_27),
     key: key(Curl729_27),
     digests: digests(Curl729_27),
@@ -367,5 +367,6 @@ export const iss = (Curl729_27, increment) => ({
     validateSignatures: validateSignatures(Curl729_27),
     bundleTrytes,
     getMerkleRoot: getMerkleRoot(Curl729_27),
-    merkleTree: merkleTree(Curl729_27),
+    getMerkleProof,
+    merkleTree: merkleTree(Curl729_27, increment),
 })
