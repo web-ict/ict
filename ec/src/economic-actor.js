@@ -47,18 +47,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import { ISS, BUNDLE_FRAGMENT_TRYTE_LENGTH, KEY_SIGNATURE_FRAGMENT_LENGTH } from '@web-ict/iss'
 import { Curl729_27 } from '@web-ict/curl'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
-import { NUMBER_OF_TIMESTAMPS, TIMESTAMP_LENGTH, TIMESTAMP_OFFSET } from '@web-ict/timestamping'
+import { INDEX_OFFSET, CONFIDENCE_OFFSET, SIBLINGS_OFFSET } from './milestone.js'
 import { HASH_LENGTH, MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
 import { integerValueToTrits, trytes, TRUE, FALSE, UNKNOWN } from '@web-ict/converter'
 import { persistence } from '@web-ict/persistence'
 import fs from 'fs'
-
-// reserves 243 trits for EC timestamps
-export const INDEX_OFFSET = TIMESTAMP_OFFSET + TIMESTAMP_LENGTH * NUMBER_OF_TIMESTAMPS
-export const INDEX_LENGTH = 81
-export const CONFIDENCE_OFFSET = INDEX_OFFSET + INDEX_LENGTH
-export const CONFIDENCE_LENGTH = 81
-export const SIBLINGS_OFFSET = CONFIDENCE_OFFSET + CONFIDENCE_LENGTH
 
 export const economicActor = ({
     persistencePath,
