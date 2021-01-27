@@ -61,9 +61,12 @@ export const autopeering = (wrtc) => ({
         peers[i] = {}
     }
 
+    let running = false
+
     return {
         peers,
         launch(receive) {
+            running = true
             const tiebreaker = (() => {
                 const numberOfNewTransactions = Array(NUMBER_OF_PEERS).fill(0)
                 return setInterval(() => {
@@ -82,6 +85,10 @@ export const autopeering = (wrtc) => ({
             })()
 
             const discover = (peer) => {
+                if (!running) {
+                    return
+                }
+
                 Object.assign(peer, {
                     uptime: 0,
                     numberOfInboundTransactions: 0,
@@ -133,6 +140,7 @@ export const autopeering = (wrtc) => ({
             peers.forEach((peer) => discover(peer))
         },
         terminate() {
+            running = false
             peers.forEach((peer) => peer.terminate())
         },
     }

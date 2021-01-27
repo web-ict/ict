@@ -54,13 +54,11 @@ tap.test('ict', async (t) => {
     await delay(() => nodeA.ixi.entangle(trits), 1000)
 
     t.equal(nodeA.info().numberOfNewTransactions, 1)
-    t.equal(nodeA.info().numberOfIxiTransactions, 1)
     t.equal(nodeA.info().numberOfInboundTransactions, 1)
 
     t.equal((await info(nodeA, 1000)).numberOfOutboundTransactions, 3)
     t.equal((await info(nodeB, 1000)).numberOfInboundTransactions, 3)
 
-    t.end()
     nodeA.terminate()
     nodeB.terminate()
 })
