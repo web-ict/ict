@@ -9,7 +9,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
     const missingTransactions = new Map()
     let interval
 
-    const updateConfidence = (actor, hash, ratedTransactions = new Set(), confidence) => {
+    const updateConfidence = (actor, confidence, hash, ratedTransactions = new Set()) => {
         let N = 0
         actors.forEach(({ weight }) => (N += weight))
 
@@ -18,7 +18,7 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
 
             if (vertex) {
                 if (vertex.transaction === undefined) {
-                    missingTransactions.set(hash, { ratedTransactions, confidence: actor.confidence })
+                    missingTransactions.set(hash, { confidence, ratedTransactions })
                 } else if (!ratedTransactions.has(vertex.hash)) {
                     let M = 0
 
@@ -57,9 +57,9 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
 
     const transactionListener = (transaction) => {
         if (missingTransactions.has(transaction.hash)) {
-            const { ratedTransactions, confidence } = missingTransactions.get(transaction.hash)
+            const { confidence, ratedTransactions } = missingTransactions.get(transaction.hash)
             missingTransactions.delete(transaction.hash)
-            actors.forEach((actor) => updateConfidence(actor, transaction.hash, ratedTransactions, confidence))
+            actors.forEach((actor) => updateConfidence(actor, confidence, transaction.hash, ratedTransactions))
         }
     }
 
@@ -106,12 +106,10 @@ export const economicCluster = ({ intervalDuration, ixi }) => {
                         ) {
                             actor.latestMilestoneIndex = index
                             actor.latestMilestone = bundle[0].hash
-                            actor.confidence = integerValue(
-                                head.messageOrSignature,
-                                CONFIDENCE_OFFSET,
-                                CONFIDENCE_LENGTH
+                            updateConfidence(
+                                actor,
+                                integerValue(head.messageOrSignature, CONFIDENCE_OFFSET, CONFIDENCE_LENGTH)
                             )
-                            updateConfidence(actor)
                         }
                     }
                 })

@@ -67,7 +67,7 @@ setInterval(() => {
     const info = cluster.info()
     info.forEach((actor) => {
         process.stdout.write(
-            `latestMilestone: ${actor.latestMilestone}, latestMilestoneIndex: ${actor.latestMilestoneIndex}, confidence: ${actor.confidence}\n`
+            `latestMilestone: ${actor.latestMilestone}, latestMilestoneIndex: ${actor.latestMilestoneIndex}\n`
         )
     })
 }, 20 * 1000)
