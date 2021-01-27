@@ -48,10 +48,10 @@ import { ICT } from '@web-ict/ict'
 import { MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { integerValueToTrits, TRUE } from '@web-ict/converter'
-//import { milestoning } from '@web-ict/milestoning'
+import { economicCluster } from '@web-ict/ec'
 
 import('@web-ict/curl').then(({ Curl729_27 }) => {
-    const test = ICT({
+    const ict = ICT({
         autopeering: {
             iceServers: [
                 {
@@ -76,36 +76,29 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
         Curl729_27,
     })
 
-    test.launch()
-    //test.ixi.listen((tx) => console.log(tx))
+    const cluster = economicCluster({
+        intervalDuration: 2 * 1000,
+        ixi: ict.ixi,
+        Curl729_27,
+    })
 
-    //const state = { index: 0 }
-    //const depth = 1
-    //const { milestone, milestoneListener, root } = milestoning(
-    //    Curl729_27,
-    //    state,
-    //    test.ixi,
-    //    new Int8Array(243),
-    //    depth,
-    //    2
-    //)
-    //milestone(NULL_TRANSACTION_HASH, NULL_TRANSACTION_HASH)
-    //const listener = milestoneListener()
-    //listener.launch({
-    //    actors: [
-    //        {
-    //            address: root(),
-    //            depth,
-    //            security: 2,
-    //        },
-    //   ],
-    //    delay: 5000,
-    //})
+    cluster.addEconomicActor({
+        address: 'XTTLDRSNRPBPGESXAVBKKS9PMNCY9ZRTIZOZJUIYMGEBFRCQPOHCCONRX9JMBPCSYYKTOYIIEVYGGCTMR',
+        depth: 12,
+        security: 1,
+        weight: 1,
+    })
 
-    setInterval(routine(test.ixi, Curl729_27), 100)
+    ict.launch()
+    cluster.launch()
+
+    setInterval(routine(ict.ixi, Curl729_27), 100)
 
     const step = () => {
-        const info = test.info()
+        const info = ict.info()
+        const { latestMilestoneIndex, latestMilestone } = cluster.info()[0]
+
+        logMilestone(latestMilestoneIndex, latestMilestone)
 
         info.peers.forEach((peer, i) => {
             logCount(`uptime-${i}`, formatDuration(peer.uptime))
@@ -151,6 +144,10 @@ function routine(ixi, Curl729_27) {
 
 function logCount(id, count) {
     document.getElementById(id).innerText = count.toString()
+}
+
+function logMilestone(milestoneIndex, milestone) {
+    document.getElementById('milestone').innerText = milestoneIndex + ', ' + milestone || ''
 }
 
 function formatDuration(t) {
