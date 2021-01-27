@@ -87,8 +87,11 @@ export const signalingClient = ({ signalingServers }) => {
                 ws.send(JSON.stringify(data))
             },
             close() {
-                ws.close()
-                ws.removeEventListener('message', onmessage)
+                if (ws.readyState === 0) {
+                    ws.onopen = () => ws.close()
+                } else if (ws.readyState === 1) {
+                    ws.close()
+                }
             },
         }
     }
