@@ -15,7 +15,8 @@
     "author": "Chris Dukakis",
     "repository": {
         "type": "git",
-        "url": "https://github.com/web-ict/ict"
+        "url": "https://github.com/web-ict/ict",
+        "directory": "converter"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
@@ -25,5 +26,5 @@
     "dependencies": {
         "big-integer": "^1.6.48"
     },
-    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
+    "gitHead": "fb0ca9ac90afd83543132bdeeb1382e1aac3fbe6"
 }
