@@ -43,7 +43,14 @@ const hub = HUB({
 
 ict.launch()
 hub.launch()
-hub.deposit({ value: HUB.bigInt(100) })
+
+const transfer = async () => {
+    const address = await hub.deposit({ value: 100 })
+    const hash = await hub.withdraw({ address, value: 100 })
+    console.log(hash)
+}
+
+transfer()
 
 setInterval(() => {
     const info = ict.info()

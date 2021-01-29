@@ -47,8 +47,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import bigInt from 'big-integer'
 import { ISS } from '@web-ict/iss'
 import { persistence } from '@web-ict/persistence'
-import { transactionTrits, updateBundleNonce } from '@web-ict/bundle'
-import { HASH_LENGTH, MESSAGE_OR_SIGNATURE_OFFSET } from '@web-ict/transaction'
+import { transactionTrits, updateBundleNonce, validateBundle } from '@web-ict/bundle'
+import { ADDRESS_LENGTH, HASH_LENGTH, MESSAGE_OR_SIGNATURE_OFFSET } from '@web-ict/transaction'
 import { BUNDLE_FRAGMENT_TRYTE_LENGTH, KEY_SIGNATURE_FRAGMENT_LENGTH } from '@web-ict/iss'
 import { TRUE, trytes, UNKNOWN } from '@web-ict/converter'
 
@@ -67,39 +67,6 @@ export const HUB = ({
     const transfers = new Set()
     const inputs = new Set()
     let interval
-
-    const serializeInput = (input) => {
-        input.address = Array.from(input.address)
-        input.digests = Array.from(input.digests)
-        input.balance = input.balance.toString()
-        return input
-    }
-
-    const deserializeInput = (input) => {
-        input.address = Int8Array.from(input.address)
-        input.digests = Int8Array.from(input.digests)
-        input.balance = bigInt(input.balance)
-        return input
-    }
-
-    const serializeTransfer = (transfer) => {
-        transfer.transactions = transfer.transactions.map((bundle) =>
-            bundle.map((transaction) => Array.from(transaction))
-        )
-        transfer.input = serializeInput(transfer.input)
-        transfer.value = transfer.value.toString()
-        return transfer
-    }
-
-    const deserializeTransfer = (transfer) => {
-        transfer = JSON.parse(transfer)
-        transfer.transactions = transfer.transactions.map((bundle) =>
-            bundle.map((transaction) => Int8Array.from(transaction))
-        )
-        transfer.input = deserializeInput(transfer.input)
-        transfer.value = bigInt(transfer.value)
-        return transfer
-    }
 
     const prepareTransfers = async ({ transfers, inputs, timelockLowerBound, timelockUpperBound }) => {
         const transactions = []
@@ -123,7 +90,7 @@ export const HUB = ({
                     transactionTrits({
                         type: UNKNOWN,
                         address,
-                        value: i == 0 ? balance : bigInt.zero,
+                        value: i == 0 ? balance.multiply(-1) : bigInt.zero,
                         timelockLowerBound,
                         timelockUpperBound,
                     })
@@ -152,11 +119,12 @@ export const HUB = ({
         const bundleTrits = updateBundleNonce(Curl729_27)(transactions, security)
         const bundle = iss.bundleTrytes(bundleTrits, security)
 
+        let offset = transfers.length
         inputs.forEach(({ index, security }) => {
             const key = iss.key(iss.subseed(seed, index), security)
 
             for (let i = 0; i < security; i++) {
-                transactions[transfers.length + i].set(
+                transactions[offset++].set(
                     iss.signatureFragment(
                         bundle.subarray(i * BUNDLE_FRAGMENT_TRYTE_LENGTH, (i + 1) * BUNDLE_FRAGMENT_TRYTE_LENGTH),
                         key.subarray(i * KEY_SIGNATURE_FRAGMENT_LENGTH, (i + 1) * KEY_SIGNATURE_FRAGMENT_LENGTH)
@@ -171,6 +139,37 @@ export const HUB = ({
             transactions,
             remainder,
         }
+    }
+
+    const serializeInput = (input) => {
+        input.address = Array.from(input.address)
+        input.digests = Array.from(input.digests)
+        input.balance = input.balance.toString()
+        return input
+    }
+
+    const deserializeInput = (input) => {
+        input.address = Int8Array.from(input.address)
+        input.digests = Int8Array.from(input.digests)
+        input.balance = bigInt(input.balance)
+        return input
+    }
+
+    const serializeTransfer = (transfer) => {
+        transfer.transactions = transfer.transactions.map((bundle) =>
+            bundle.map((transaction) => Array.from(transaction))
+        )
+        transfer.input = serializeInput(transfer.input)
+        return transfer
+    }
+
+    const deserializeTransfer = (transfer) => {
+        transfer = JSON.parse(transfer)
+        transfer.transactions = transfer.transactions.map((bundle) =>
+            bundle.map((transaction) => Int8Array.from(transaction))
+        )
+        transfer.input = deserializeInput(transfer.input)
+        return transfer
     }
 
     const deposit = async ({ value }) => {
@@ -193,18 +192,76 @@ export const HUB = ({
 
         const transfer = {
             bundle,
-            value,
-            input: output,
             transactions: [transactions],
+            input: output,
         }
 
         await put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
         transfers.add(transfer)
 
         transfer.attachments = [ixi.attachToTangle(transactions)]
+
+        return trytes(output.address, 0, ADDRESS_LENGTH)
     }
 
-    const withdraw = () => {}
+    const withdraw = async ({ address, value }) => {
+        const bundles = ixi.getBundlesByAddress(address)
+        const bundleTransactions = bundles
+            .filter(
+                (transactions) =>
+                    transactions[0].value.greater(bigInt.zero) &&
+                    transactions[1].value.multiply(-1).equals(transactions[0].value)
+            )
+            .filter((transactions) => validateBundle(transactions))[0]
+
+        if (bundleTransactions !== undefined) {
+            if (!bigInt(value).equals(bundleTransactions[0].value)) {
+                throw new Error('Invalid value.')
+            }
+
+            const buffer = []
+            const iterator = inputs.values()
+            let balance = bigInt.zero
+
+            while (inputs.size > 0) {
+                const input = iterator.next().value
+                buffer.push(input)
+                inputs.delete(input)
+                balance = balance.add(input.balance)
+                if (balance.greaterOrEquals(value)) {
+                    break
+                }
+            }
+
+            if (balance.lesser(value)) {
+                buffer.forEach((input) => inputs.set(input))
+                throw new Error('Insufficient balance.')
+            }
+
+            const { bundle, transactions, remainder } = await prepareTransfers({
+                transfers: [
+                    {
+                        address: bundleTransactions[1].address,
+                        value: bundleTransactions[0].value,
+                    },
+                ],
+                inputs: buffer,
+            })
+
+            const transfer = {
+                bundle,
+                transactions,
+                input: remainder,
+            }
+
+            put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
+            transfers.add(transfer)
+
+            transfer.attachments = [ixi.attachToTangle(transactions)]
+
+            return transfer.attachments[0]
+        }
+    }
 
     const sweep = async (transfer) => {
         const output = await iss.address(seed, security)
@@ -212,16 +269,16 @@ export const HUB = ({
             transfers: [
                 {
                     address: output.address,
-                    value: transfer.value,
+                    value: transfer.input.balance,
                 },
             ],
             inputs: [transfer.input],
         })
         transfer.transactions.push(transactions)
+        output.balance = transfer.input.balance
         transfer.input = output
-        output.balance = transfer.value
 
-        put('transfer:'.concat(transfer.hash), serializeTransfer(transfer), { valueEncoding: 'json' })
+        put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
 
         transfer.attachments = [ixi.attachToTangle(transactions)]
     }
@@ -261,7 +318,7 @@ export const HUB = ({
 
                         await batch()
                             .del('transfer:'.concat(transfer.bundle))
-                            .put('input:'.concat(trytes(input.address, 0, HASH_LENGTH)), serializeInput(input), {
+                            .put('input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)), serializeInput(input), {
                                 valueEncoding: 'json',
                             })
 
