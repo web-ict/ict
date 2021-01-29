@@ -1,8 +1,8 @@
+import { HUB } from '../index.js'
 import { Curl729_27 } from '@web-ict/curl'
-import { updateTransactionNonce, transactionTrits } from '@web-ict/bundle'
-import { ICT } from '../index.js'
+import { ICT } from '@web-ict/ict'
 
-const properties = {
+const ict = ICT({
     autopeering: {
         signalingServers: (process.env.SIGNALING_SERVERS
             ? process.env.SIGNALING_SERVERS.split(',').map((url) => url.trim())
@@ -28,18 +28,22 @@ const properties = {
         artificialLatency: process.env.ARTIFICIAL_LATENCY || 100, // ms
     },
     Curl729_27,
-}
+})
 
-const ict = ICT(properties)
+const hub = HUB({
+    seed: new Int8Array(243),
+    security: 2,
+    persistencePath: './',
+    persistenceId: 'db',
+    reattachIntervalDuration: 3 * 60 * 1000,
+    acceptanceThreshold: 100,
+    Curl729_27,
+    ixi: ict.ixi,
+})
+
 ict.launch()
-
-setInterval(() => {
-    const trits = transactionTrits({})
-    ict.ixi.getTransactionsToApprove(trits)
-    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1)
-
-    ict.ixi.entangle(trits)
-}, 1000)
+hub.launch()
+hub.deposit({ value: HUB.bigInt(100) })
 
 setInterval(() => {
     const info = ict.info()

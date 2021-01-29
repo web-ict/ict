@@ -44,10 +44,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET } from '@web-ict/transaction'
-import { TRUE } from '@web-ict/converter'
+import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET, TRUNK_TRANSACTION_LENGTH } from '@web-ict/transaction'
+import { updateTransactionNonce } from '@web-ict/bundle'
+import { TRUE, FALSE, trytes } from '@web-ict/converter'
 
-export const IXI = (subtangle, entangle, listeners) => {
+export const IXI = ({ subtangle, entangle, listeners, Curl729_27 }) => {
     const collectBundle = (transaction, bundle = []) => {
         if (bundle.length === 0 && transaction.tailFlag !== TRUE) {
             throw new Error('Expected tail transaction.')
@@ -89,6 +90,25 @@ export const IXI = (subtangle, entangle, listeners) => {
         getTransactionsToApprove: (trits) => {
             trits.set(subtangle.bestReferrerHash(), TRUNK_TRANSACTION_OFFSET)
             trits.set(subtangle.bestReferrerHash(), BRANCH_TRANSACTION_OFFSET)
+        },
+        attachToTangle: (transactions) => {
+            const branchTransaction = subtangle.bestReferrerHash()
+            let trunkTransaction = subtangle.bestReferrerHash()
+
+            for (let i = transactions.length - 1; i >= 0; i--) {
+                transactions[i].set(branchTransaction, BRANCH_TRANSACTION_OFFSET)
+                transactions[i].set(trunkTransaction, TRUNK_TRANSACTION_OFFSET)
+                trunkTransaction = updateTransactionNonce(Curl729_27)(
+                    transactions[i],
+                    transactions[i].type,
+                    i === transactions.length - 1 ? TRUE : FALSE,
+                    i === 0 ? TRUE : FALSE
+                ).slice()
+
+                entangle(transactions[i])
+            }
+
+            return trytes(trunkTransaction, 0, TRUNK_TRANSACTION_LENGTH)
         },
         bestReferrerHash: subtangle.bestReferrerHash,
         entangle,

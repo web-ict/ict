@@ -88,9 +88,10 @@ import {
     HEAD_FLAG_OFFSET,
 } from '@web-ict/transaction'
 
-import { NUMBER_OF_SECURITY_LEVELS, BUNDLE_FRAGMENT_LENGTH } from '@web-ict/iss'
+import { BUNDLE_FRAGMENT_LENGTH } from '@web-ict/iss'
 
 export const transactionTrits = ({
+    type,
     messageOrSignature,
     extraDataDigest,
     address,
@@ -108,6 +109,7 @@ export const transactionTrits = ({
     transactionNonce,
 }) => {
     const trits = new Int8Array(TRANSACTION_LENGTH)
+    trits.type = type
 
     if (messageOrSignature !== undefined) {
         trits.set(messageOrSignature.slice(0, MESSAGE_OR_SIGNATURE_LENGTH), MESSAGE_OR_SIGNATURE_OFFSET)
@@ -178,14 +180,7 @@ export const transactionTrits = ({
     return trits
 }
 
-export const updateTransactionNonce = (Curl729_27) => (
-    trits,
-    type,
-    headFlag,
-    tailFlag,
-    maxNumberOfAttempts,
-    security
-) => {
+export const updateTransactionNonce = (Curl729_27) => (trits, type, headFlag, tailFlag, security) => {
     if ([-1, 0, 1].indexOf(type) === -1) {
         throw new RangeError('Illegal type. Expected one of -1, 0 or 1.')
     }
@@ -199,7 +194,6 @@ export const updateTransactionNonce = (Curl729_27) => (
     }
 
     const hash = new Int8Array(HASH_LENGTH)
-    let numberOfFailedAttempts = 0
 
     do {
         Curl729_27.get_digest(trits, 0, TRANSACTION_LENGTH, hash, 0)
@@ -230,19 +224,16 @@ export const updateTransactionNonce = (Curl729_27) => (
                 break
             }
         }
-    } while (++numberOfFailedAttempts < maxNumberOfAttempts)
+    } while (true) // eslint-disable-line no-constant-condition
 
-    return {
-        numberOfFailedAttempts,
-        hash,
-    }
+    return hash
 }
 
 export const essence = (transactions) => {
     const essenceTrits = new Int8Array(transactions.length * BUNDLE_ESSENCE_LENGTH)
 
     for (let i = 0; i < transactions.length; i++) {
-        essenceTrits.set(i * BUNDLE_ESSENCE_LENGTH, transactions[i].slice(BUNDLE_ESSENCE_OFFSET, BUNDLE_ESSENCE_END))
+        essenceTrits.set(transactions[i].slice(BUNDLE_ESSENCE_OFFSET, BUNDLE_ESSENCE_END), i * BUNDLE_ESSENCE_LENGTH)
     }
 
     return essenceTrits
@@ -256,7 +247,7 @@ export const hammingWeight = (bundle, offset) => {
     return w
 }
 
-export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNumberOfAttempts) => {
+export const updateBundleNonce = (Curl729_27) => (transactions, security) => {
     if ([1, 2, 3].indexOf(security) === -1) {
         throw new RangeError('Illegal security level. Expected one of 1, 2 or 3.')
     }
@@ -264,21 +255,20 @@ export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNum
     const essenceTrits = essence(transactions)
     const bundle = new Int8Array(HASH_LENGTH)
     const curl = new Curl729_27(essenceTrits.length)
-    let numberOfFailedAttempts = 0
 
     do {
         curl.absorb(essenceTrits, 0, essenceTrits.length)
         curl.squeeze(bundle, 0, bundle.length)
 
-        let i = 0
-        do {
-            const w = hammingWeight(bundle, i * BUNDLE_FRAGMENT_LENGTH)
-            if (i < security ? w === 0 : w !== 0) {
+        let weightValidityFlag = true
+        for (let i = 0; i < security; i++) {
+            if (hammingWeight(bundle, i * BUNDLE_FRAGMENT_LENGTH) !== 0) {
+                weightValidityFlag = false
                 break
             }
-        } while (++i < NUMBER_OF_SECURITY_LEVELS)
+        }
 
-        if (i === NUMBER_OF_SECURITY_LEVELS) {
+        if (weightValidityFlag) {
             break
         }
 
@@ -291,16 +281,9 @@ export const updateBundleNonce = (Curl729_27) => (transactions, security, maxNum
         }
 
         curl.reset(essenceTrits.length)
-    } while (++numberOfFailedAttempts < maxNumberOfAttempts)
+    } while (true) // eslint-disable-line no-constant-condition
 
-    if (numberOfFailedAttempts === maxNumberOfAttempts) {
-        throw new Error(numberOfFailedAttempts)
-    }
+    transactions[0].set(essenceTrits.slice(-BUNDLE_NONCE_LENGTH), BUNDLE_NONCE_OFFSET)
 
-    transactions[0].set(
-        BUNDLE_NONCE_OFFSET,
-        essenceTrits.slice(BUNDLE_NONCE_OFFSET - BUNDLE_NONCE_END - BUNDLE_ESSENCE_OFFSET)
-    )
-
-    return { bundle, numberOfFailedAttempts }
+    return bundle
 }

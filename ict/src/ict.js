@@ -156,7 +156,7 @@ export const ICT = function (properties) {
             disseminator.launch(send)
             peering.launch(receive)
         },
-        ixi: IXI(subtangle, entangle, listeners),
+        ixi: IXI({ subtangle, entangle, listeners, Curl729_27 }),
         terminate() {
             peering.terminate()
             disseminator.terminate()

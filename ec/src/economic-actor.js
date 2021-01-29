@@ -94,14 +94,7 @@ export const economicActor = ({
             branchTransaction,
         })
 
-        const hashToSign = updateTransactionNonce(Curl729_27)(
-            siblingsTransaction,
-            UNKNOWN,
-            TRUE,
-            FALSE,
-            Number.POSITIVE_INFINITY,
-            security
-        ).hash
+        const hashToSign = updateTransactionNonce(Curl729_27)(siblingsTransaction, UNKNOWN, TRUE, FALSE, security)
         trunkTransaction = hashToSign
 
         ixi.entangle(siblingsTransaction)
@@ -124,9 +117,8 @@ export const economicActor = ({
                 signatureTransaction,
                 UNKNOWN,
                 FALSE,
-                i === security - 1 ? TRUE : FALSE,
-                Number.POSITIVE_INFINITY
-            ).hash
+                i === security - 1 ? TRUE : FALSE
+            )
 
             ixi.entangle(signatureTransaction)
         }

@@ -49,7 +49,7 @@ const delay = (f, ms) =>
 tap.test('ict', async (t) => {
     const trits = transactionTrits({})
     nodeA.ixi.getTransactionsToApprove(trits)
-    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1, 1000)
+    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1)
 
     await delay(() => nodeA.ixi.entangle(trits), 1000)
 
