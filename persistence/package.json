@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/persistence",
-    "version": "0.0.0-beta.9",
+    "version": "0.0.0-beta.10",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -19,7 +19,7 @@
         "directory": "persistence"
     },
     "dependencies": {
-        "@web-ict/async-buffer": "^0.0.0-beta.9",
+        "@web-ict/async-buffer": "^0.0.0-beta.10",
         "level": "^6.0.1"
     },
     "devDependencies": {
