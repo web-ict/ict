@@ -1,1 +1,1 @@
-export { transactionTrits, updateTransactionNonce } from './src/bundle.js'
+export { transactionTrits, updateTransactionNonce, updateBundleNonce } from './src/bundle.js'

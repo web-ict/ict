@@ -88,3 +88,19 @@ const actor = economicActor({
 ict.launch()
 actor.launch()
 console.log(actor.address())
+
+setInterval(() => {
+    const info = ict.info()
+    info.peers.forEach((peer, i) => {
+        process.stdout.write(
+            `Peer #${i + 1} - Inbound: ${peer.numberOfInboundTransactions}, Outbound: ${
+                peer.numberOfOutboundTransactions
+            }, New: ${peer.numberOfNewTransactions}, Seen: ${peer.numberOfSeenTransactions}, Rate: ${
+                peer.rateOfNewTransactions
+            }\n`
+        )
+    })
+    process.stdout.write(
+        `Subtangle size: ${info.subtangle.size}, Tips: ${info.subtangle.numberOfTips}, Inbound: ${info.numberOfInboundTransactions}, Outbound: ${info.numberOfOutboundTransactions}, New: ${info.numberOfNewTransactions}, Seen: ${info.numberOfSeenTransactions}, Invalid: ${info.numberOfInvalidTransactions}, Enqueued: ${info.numberOfTransactionsToPropagate}\n`
+    )
+}, 3000)

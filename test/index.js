@@ -126,7 +126,6 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
 
 function routine(ixi, Curl729_27) {
     let index = 0
-    const maxNumberOfAttempts = 81
 
     return () => {
         const signatureOrMessage = new Int8Array(MESSAGE_OR_SIGNATURE_LENGTH)
@@ -137,7 +136,7 @@ function routine(ixi, Curl729_27) {
         })
 
         ixi.getTransactionsToApprove(trits)
-        updateTransactionNonce(Curl729_27)(trits, 1, TRUE, TRUE, maxNumberOfAttempts)
+        updateTransactionNonce(Curl729_27)(trits, 1, TRUE, TRUE)
         ixi.entangle(trits)
     }
 }
