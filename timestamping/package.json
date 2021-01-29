@@ -27,5 +27,6 @@
         "@web-ict/converter": "^0.0.0-beta.9",
         "@web-ict/curl": "^0.0.0-beta.7",
         "@web-ict/transaction": "^0.0.0-beta.9"
-    }
+    },
+    "gitHead": "fb0ca9ac90afd83543132bdeeb1382e1aac3fbe6"
 }

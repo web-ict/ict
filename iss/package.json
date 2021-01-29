@@ -15,7 +15,8 @@
     "author": "Chris Dukakis",
     "repository": {
         "type": "git",
-        "url": "https://github.com/web-ict/iss"
+        "url": "https://github.com/web-ict/ict",
+        "directory": "iss"
     },
     "dependencies": {
         "@web-ict/converter": "^0.0.0-beta.9",
@@ -30,5 +31,5 @@
         "rimraf": "^3.0.2",
         "tap": "^14.11.0"
     },
-    "gitHead": "8d118f11b686c9c048646c7343024d0c47f469b6"
+    "gitHead": "fb0ca9ac90afd83543132bdeeb1382e1aac3fbe6"
 }
