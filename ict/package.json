@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/ict",
-    "version": "0.0.0-beta.8",
+    "version": "0.0.0-beta.9",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -19,16 +19,16 @@
         "url": "https://github.com/web-ict/ict"
     },
     "dependencies": {
-        "@web-ict/autopeering": "^0.0.0-beta.7",
-        "@web-ict/converter": "^0.0.0-beta.7",
-        "@web-ict/dissemination": "^0.0.0-beta.7",
-        "@web-ict/ixi": "^0.0.0-beta.7",
-        "@web-ict/tangle": "^0.0.0-beta.8",
-        "@web-ict/transaction": "^0.0.0-beta.7"
+        "@web-ict/autopeering": "^0.0.0-beta.9",
+        "@web-ict/converter": "^0.0.0-beta.9",
+        "@web-ict/dissemination": "^0.0.0-beta.9",
+        "@web-ict/ixi": "^0.0.0-beta.9",
+        "@web-ict/tangle": "^0.0.0-beta.9",
+        "@web-ict/transaction": "^0.0.0-beta.9"
     },
     "devDependencies": {
+        "@web-ict/bundle": "^0.0.0-beta.9",
         "@web-ict/curl": "^0.0.0-beta.7",
-        "@web-ict/bundle": "^0.0.0-beta.7",
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
         "prettier": "^2.0.2",
