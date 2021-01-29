@@ -33,6 +33,6 @@ jobs:
       - run: npm ci
       - run: git config --global user.email chrisdukakis@gmail.com
       - run: git config --global user.name Chris Dukakis
-      - run: npm run publish
+      - run: npm run publish-ci
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
