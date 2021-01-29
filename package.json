@@ -6,7 +6,7 @@
         "lint": "eslint ./",
         "format": "prettier --write .",
         "clean": "lerna clean",
-        "publish": "lerna publish"
+        "publish": "lerna publish --canary --preid beta"
     },
     "repository": {
         "type": "git",
