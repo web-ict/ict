@@ -287,3 +287,8 @@ export const updateBundleNonce = (Curl729_27) => (transactions, security) => {
 
     return bundle
 }
+
+export const validateBundle = () => {
+    // TODO: Implement
+    return true
+}
