@@ -118,16 +118,17 @@ export const ICT = function (properties) {
             // New tx
             numberOfInboundTransactions++
             numberOfNewTransactions++
+
             disseminator.postMessage(i, trits)
             listeners.forEach((fn) => fn(tx))
+
+            requestIfNeeded(tx.trunkTransaction)
+            requestIfNeeded(tx.branchTransaction)
         } else {
             // Seen tx
             numberOfInboundTransactions++
             disseminator.postMessage(i)
         }
-
-        requestIfNeeded(tx.trunkTransaction)
-        requestIfNeeded(tx.branchTransaction)
 
         return i
     }

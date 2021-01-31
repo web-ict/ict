@@ -185,6 +185,7 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
 
                             if (transaction === undefined) {
                                 solid = false
+                                ixi.request(hash)
                                 break
                             } else {
                                 nonAnalyzedTransactions.push(transaction.trunkTransaction)
