@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { ICT } from '@web-ict/ict'
 import { Curl729_27 } from '@web-ict/curl'
-import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
+// import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { trytes } from '@web-ict/converter'
 import { economicCluster } from '../index.js'
 import fs from 'fs'
@@ -78,7 +78,7 @@ const ict = ICT({
 })
 
 const cluster = economicCluster({
-    intervalDuration: 2 * 1000,
+    intervalDuration: 5 * 1000,
     ixi: ict.ixi,
     Curl729_27,
 })
@@ -93,13 +93,13 @@ cluster.addEconomicActor({
 ict.launch()
 cluster.launch()
 
-setInterval(() => {
-    const trits = transactionTrits({})
-    ict.ixi.getTransactionsToApprove(trits)
-    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1)
+// setInterval(() => {
+//     const trits = transactionTrits({})
+//     ict.ixi.getTransactionsToApprove(trits)
+//     updateTransactionNonce(Curl729_27)(trits, 1, 1, 1)
 
-    ict.ixi.entangle(trits)
-}, 1000)
+//     ict.ixi.entangle(trits)
+// }, 1000)
 
 setInterval(() => {
     const info = ict.info()
@@ -121,7 +121,7 @@ setInterval(() => {
     const info = cluster.info()
     info.forEach((actor) => {
         process.stdout.write(
-            `latestMilestone: ${actor.latestMilestone}, latestMilestoneIndex: ${actor.latestMilestoneIndex}\n`
+            `latestMilestoneIndex: ${actor.latestMilestoneIndex}, latestSolidSubtangleMilestoneIndex: ${actor.latestSolidSubtangleMilestoneIndex} \n`
         )
     })
 }, 20 * 1000)

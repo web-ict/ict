@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { NULL_TRANSACTION_HASH_TRYTES, NULL_HASH_TRYTES, NULL_TAG_TRYTES, HASH_LENGTH } from '@web-ict/transaction'
+import { NULL_HASH_TRYTES, NULL_TAG_TRYTES, HASH_LENGTH } from '@web-ict/transaction'
 import { FALSE, TRUE, trytesToTrits } from '@web-ict/converter'
 
 const vertex = (hash, index) => ({
@@ -64,9 +64,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const tips = new Set()
 
     const get = (hash) => verticesByHash.get(hash)
-
-    verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
-    tips.add(get(NULL_TRANSACTION_HASH_TRYTES))
 
     const remove = (hash) => {
         let v = get(hash)
@@ -231,7 +228,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const clear = () => {
         index = 0
         verticesByHash.clear()
-        verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
         verticesByAddress.clear()
         verticesByTag.clear()
         tips.clear()

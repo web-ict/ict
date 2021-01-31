@@ -48,8 +48,27 @@ import { autopeering } from '@web-ict/autopeering'
 import { dissemination } from '@web-ict/dissemination'
 import { IXI } from '@web-ict/ixi'
 import { tangle } from '@web-ict/tangle'
-import { transaction, TRANSACTION_LENGTH, HASH_LENGTH } from '@web-ict/transaction'
-import { sizeInBytes, lengthInTrits, bytesToTrits, tritsToBytes, FALSE, UNKNOWN } from '@web-ict/converter'
+import {
+    transaction,
+    TRANSACTION_LENGTH,
+    HASH_LENGTH,
+    TRUNK_TRANSACTION_OFFSET,
+    TAIL_FLAG_OFFSET,
+    BRANCH_TRANSACTION_OFFSET,
+} from '@web-ict/transaction'
+import {
+    sizeInBytes,
+    lengthInTrits,
+    bytesToTrits,
+    tritsToBytes,
+    trytes,
+    FALSE,
+    TRUE,
+    UNKNOWN,
+    TRITS_PER_ELEMENT,
+    trytesToTrits,
+} from '@web-ict/converter'
+import { updateTransactionNonce } from '@web-ict/bundle'
 
 export const ICT = function (properties) {
     const { Curl729_27 } = properties
@@ -63,8 +82,30 @@ export const ICT = function (properties) {
     let numberOfNewTransactions
     let numberOfInvalidTransactions
 
+    const requestedTransactions = new Set()
+
+    const request = (hash) => {
+        const packetTrits = new Int8Array(HASH_LENGTH + TRITS_PER_ELEMENT)
+        trytesToTrits(hash, packetTrits, TRITS_PER_ELEMENT, HASH_LENGTH)
+        const packet = new ArrayBuffer(sizeInBytes(packetTrits.length))
+        tritsToBytes(packetTrits, 0, packetTrits.length, packet, 0)
+        requestedTransactions.add(hash)
+        peers.forEach((peer) => peer.send(packet))
+    }
+
+    const requestIfNeeded = (hash) => {
+        if (subtangle.getTransaction(hash) === undefined && !requestedTransactions.has(hash)) {
+            setTimeout(() => {
+                if (subtangle.getTransaction(hash) === undefined) {
+                    request(hash)
+                }
+            }, properties.dissemination.B)
+        }
+    }
+
     const entangle = (trits) => {
         const tx = transaction(Curl729_27, trits)
+        requestedTransactions.delete(tx.hash)
 
         if (tx === FALSE) {
             // Invalid tx
@@ -85,10 +126,13 @@ export const ICT = function (properties) {
             disseminator.postMessage(i)
         }
 
+        requestIfNeeded(tx.trunkTransaction)
+        requestIfNeeded(tx.branchTransaction)
+
         return i
     }
 
-    const send = (trits) => {
+    const send = (trits, peer) => {
         let firstNonZeroTritOffset = 0
         for (; firstNonZeroTritOffset < TRANSACTION_LENGTH; firstNonZeroTritOffset++) {
             if (trits[firstNonZeroTritOffset] !== UNKNOWN) {
@@ -99,16 +143,40 @@ export const ICT = function (properties) {
         const packet = new ArrayBuffer(sizeInBytes(TRANSACTION_LENGTH - numberOfSkippedTrits))
         tritsToBytes(trits, numberOfSkippedTrits, TRANSACTION_LENGTH - numberOfSkippedTrits, packet, 0)
 
-        peers.forEach((peer) => {
+        if (peer) {
             if (peer.send(packet)) {
                 numberOfOutboundTransactions++
                 peer.numberOfOutboundTransactions++
             }
-        })
+        } else {
+            peers.forEach((peer) => {
+                if (peer.send(packet)) {
+                    numberOfOutboundTransactions++
+                    peer.numberOfOutboundTransactions++
+                }
+            })
+        }
     }
 
     const receive = (packet, peer) => {
-        if (lengthInTrits(packet.byteLength) % HASH_LENGTH === 0) {
+        const tritsLength = lengthInTrits(packet.byteLength)
+        if (tritsLength === HASH_LENGTH + TRITS_PER_ELEMENT) {
+            const trits = new Int8Array(HASH_LENGTH + TRITS_PER_ELEMENT)
+            bytesToTrits(packet, 0, packet.byteLength, trits, 0)
+
+            const requestedTransaction = subtangle.getTransaction(
+                trytes(trits.slice(TRITS_PER_ELEMENT), 0, HASH_LENGTH)
+            )
+            if (requestedTransaction === undefined) {
+                peers.forEach((peer2) => {
+                    if (peer2 !== peer) {
+                        //peer2.send(packet)
+                    }
+                })
+            } else {
+                send(requestedTransaction.trits, peer)
+            }
+        } else if (tritsLength % HASH_LENGTH === 0) {
             const trits = new Int8Array(TRANSACTION_LENGTH).fill(0)
             bytesToTrits(packet, 0, packet.byteLength, trits, TRANSACTION_LENGTH - lengthInTrits(packet.byteLength))
 
@@ -153,10 +221,17 @@ export const ICT = function (properties) {
             numberOfOutboundTransactions = 0
             numberOfNewTransactions = 0
             numberOfInvalidTransactions = 0
+
+            const trits = new Int8Array(TRANSACTION_LENGTH)
+            trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] = TRUE
+            trits[BRANCH_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] = TRUE
+            updateTransactionNonce(Curl729_27)(trits, FALSE, TRUE, TRUE)
+            subtangle.put(transaction(Curl729_27, trits))
+
             disseminator.launch(send)
             peering.launch(receive)
         },
-        ixi: IXI({ subtangle, entangle, listeners, Curl729_27 }),
+        ixi: IXI({ subtangle, entangle, request, listeners, Curl729_27 }),
         terminate() {
             peering.terminate()
             disseminator.terminate()

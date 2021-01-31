@@ -69,7 +69,7 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
             B: 100,
         },
         subtangle: {
-            capacity: 100, // In transactions
+            capacity: 100000, // In transactions
             pruningScale: 0.1, // In proportion to capacity
             artificialLatency: 100, // Artificial latency in ms
         },
@@ -96,9 +96,9 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
 
     const step = () => {
         const info = ict.info()
-        const { latestMilestoneIndex, latestMilestone } = cluster.info()[0]
+        const { latestMilestoneIndex, latestSolidSubtangleMilestoneIndex } = cluster.info()[0]
 
-        logMilestone(latestMilestoneIndex, latestMilestone)
+        logMilestone(latestMilestoneIndex, latestSolidSubtangleMilestoneIndex)
 
         info.peers.forEach((peer, i) => {
             logCount(`uptime-${i}`, formatDuration(peer.uptime))
@@ -145,8 +145,9 @@ function logCount(id, count) {
     document.getElementById(id).innerText = count.toString()
 }
 
-function logMilestone(milestoneIndex, milestone) {
-    document.getElementById('milestone').innerText = milestoneIndex + ', ' + milestone || ''
+function logMilestone(latestMilestoneIndex, latestSolidSubtangleMilestoneIndex) {
+    document.getElementById('latest-milestone').innerText = latestMilestoneIndex
+    document.getElementById('latest-solid-subtangle-milestone').innerText = latestSolidSubtangleMilestoneIndex
 }
 
 function formatDuration(t) {

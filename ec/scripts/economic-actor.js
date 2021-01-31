@@ -44,6 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 import { ICT } from '@web-ict/ict'
 import { Curl729_27 } from '@web-ict/curl'
+import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { economicActor } from '../index.js'
 
 const ict = ICT({
@@ -67,7 +68,7 @@ const ict = ICT({
         B: process.env.B || 100,
     },
     subtangle: {
-        capacity: process.env.SUBTANGLE_CAPACITY || 100, // In transactions
+        capacity: process.env.SUBTANGLE_CAPACITY || 100000, // In transactions
         pruningScale: process.env.PRUNING_SCALE || 0.1, // In proportion to capacity
         artificialLatency: process.env.ARTIFICIAL_LATENCY || 100, // ms
     },
@@ -88,6 +89,14 @@ const actor = economicActor({
 ict.launch()
 actor.launch()
 console.log(actor.address())
+
+setInterval(() => {
+    const trits = transactionTrits({})
+    ict.ixi.getTransactionsToApprove(trits)
+    updateTransactionNonce(Curl729_27)(trits, 1, 1, 1)
+
+    ict.ixi.entangle(trits)
+}, 1000)
 
 setInterval(() => {
     const info = ict.info()
