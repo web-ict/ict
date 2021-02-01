@@ -88,7 +88,7 @@ const actor = economicActor({
 
 ict.launch()
 actor.launch()
-console.log(actor.address())
+process.stdout.write(`Address: ${actor.address()}\n`)
 
 setInterval(() => {
     const trits = transactionTrits({})
@@ -100,6 +100,8 @@ setInterval(() => {
 
 setInterval(() => {
     const info = ict.info()
+    const actorInfo = actor.info()
+
     info.peers.forEach((peer, i) => {
         process.stdout.write(
             `Peer #${i + 1} - Inbound: ${peer.numberOfInboundTransactions}, Outbound: ${
@@ -112,4 +114,5 @@ setInterval(() => {
     process.stdout.write(
         `Subtangle size: ${info.subtangle.size}, Tips: ${info.subtangle.numberOfTips}, Inbound: ${info.numberOfInboundTransactions}, Outbound: ${info.numberOfOutboundTransactions}, New: ${info.numberOfNewTransactions}, Seen: ${info.numberOfSeenTransactions}, Invalid: ${info.numberOfInvalidTransactions}, Enqueued: ${info.numberOfTransactionsToPropagate}\n`
     )
+    process.stdout.write(`Milestone index: ${actorInfo.latestMilestoneIndex}\n`)
 }, 3000)

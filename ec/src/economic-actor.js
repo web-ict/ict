@@ -48,7 +48,7 @@ import { ISS, BUNDLE_FRAGMENT_TRYTE_LENGTH, KEY_SIGNATURE_FRAGMENT_LENGTH } from
 import { Curl729_27 } from '@web-ict/curl'
 import { transactionTrits, updateTransactionNonce } from '@web-ict/bundle'
 import { INDEX_OFFSET, CONFIDENCE_OFFSET, SIBLINGS_OFFSET } from './milestone.js'
-import { HASH_LENGTH, MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
+import { ADDRESS_LENGTH, MESSAGE_OR_SIGNATURE_LENGTH } from '@web-ict/transaction'
 import { integerValueToTrits, trytes, TRUE, FALSE, UNKNOWN } from '@web-ict/converter'
 import { persistence } from '@web-ict/persistence'
 import fs from 'fs'
@@ -65,15 +65,17 @@ export const economicActor = ({
 }) => {
     const { increment } = persistence({ path: persistencePath, id: persistenceId })
     const root = JSON.parse(fs.readFileSync(merkleTreeFile))
+    const addressTrytes = trytes(root.address, 0, ADDRESS_LENGTH)
     const iss = ISS(Curl729_27)
     let interval
+    let index = -1
 
     const milestoneIssuanceRoutine = async () => {
         let trunkTransaction = ixi.bestReferrerHash()
         const branchTransaction = ixi.bestReferrerHash()
         const confidence = 100
 
-        const index = await increment()
+        index = await increment()
 
         if (index >= 2 ** depth) {
             clearInterval(interval)
@@ -132,7 +134,13 @@ export const economicActor = ({
             clearInterval(interval)
         },
         address() {
-            return trytes(root.address, 0, HASH_LENGTH)
+            return addressTrytes
+        },
+        info() {
+            return {
+                address: addressTrytes,
+                latestMilestoneIndex: index,
+            }
         },
     }
 }
