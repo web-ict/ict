@@ -127,9 +127,12 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
     const put = (transaction) => {
         let v = get(transaction.hash)
+        let i = 0
+        let j = 0
+        let k = 0
 
         if (v === undefined) {
-            v = vertex(transaction.hash, ++index)
+            v = vertex(transaction.hash, (i = ++index))
             verticesByHash.set(transaction.hash, v)
 
             if (transaction.tailFlag === TRUE) {
@@ -138,14 +141,14 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         }
 
         if (v.transaction !== undefined) {
-            return FALSE * v.index // seen tx
+            return [FALSE * i] // seen tx
         }
 
         v.transaction = transaction
 
         v.trunkVertex = get(transaction.trunkTransaction)
         if (v.trunkVertex === undefined) {
-            v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
+            v.trunkVertex = vertex(transaction.trunkTransaction, (j = ++index))
             verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
         }
         v.trunkVertex.referrers.add(v)
@@ -156,7 +159,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         } else {
             v.branchVertex = get(transaction.branchTransaction)
             if (v.branchVertex === undefined) {
-                v.branchVertex = vertex(transaction.branchTransaction, ++index)
+                v.branchVertex = vertex(transaction.branchTransaction, (j = ++index))
                 verticesByHash.set(transaction.branchTransaction, v.branchVertex)
             }
             v.branchVertex.referrers.add(v)
@@ -183,7 +186,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
         pruneIfNeccessary()
 
-        return TRUE * v.index // New tx
+        return [i, j, k] // New tx
     }
 
     const getTransaction = (hash) => {

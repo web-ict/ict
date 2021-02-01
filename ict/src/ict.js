@@ -75,6 +75,10 @@ export const ICT = function (properties) {
     const peering = autopeering(properties.autopeering)
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
+    const requestDisseminator = dissemination({
+        A: properties.dissemination.B,
+        B: properties.dissemination.B,
+    })
     const subtangle = tangle(properties.subtangle)
     const listeners = new Set()
     let numberOfInboundTransactions
@@ -82,30 +86,16 @@ export const ICT = function (properties) {
     let numberOfNewTransactions
     let numberOfInvalidTransactions
 
-    const requestedTransactions = new Set()
-
     const request = (hash) => {
         const packetTrits = new Int8Array(HASH_LENGTH + TRITS_PER_ELEMENT)
         trytesToTrits(hash, packetTrits, TRITS_PER_ELEMENT, HASH_LENGTH)
         const packet = new ArrayBuffer(sizeInBytes(packetTrits.length))
         tritsToBytes(packetTrits, 0, packetTrits.length, packet, 0)
-        requestedTransactions.add(hash)
         peers.forEach((peer) => peer.send(packet))
-    }
-
-    const requestIfNeeded = (hash) => {
-        if (subtangle.getTransaction(hash) === undefined && !requestedTransactions.has(hash)) {
-            setTimeout(() => {
-                if (subtangle.getTransaction(hash) === undefined) {
-                    request(hash)
-                }
-            }, properties.dissemination.B)
-        }
     }
 
     const entangle = (trits) => {
         const tx = transaction(Curl729_27, trits)
-        requestedTransactions.delete(tx.hash)
 
         if (tx === FALSE) {
             // Invalid tx
@@ -113,17 +103,22 @@ export const ICT = function (properties) {
             return UNKNOWN
         }
 
-        const i = subtangle.put(tx)
+        const [i, j, k] = subtangle.put(tx)
         if (i > UNKNOWN) {
             // New tx
             numberOfInboundTransactions++
             numberOfNewTransactions++
 
             disseminator.postMessage(i, trits)
+            requestDisseminator.postMessage(-i)
             listeners.forEach((fn) => fn(tx))
 
-            requestIfNeeded(tx.trunkTransaction)
-            requestIfNeeded(tx.branchTransaction)
+            if (j > UNKNOWN) {
+                requestDisseminator.postMessage(j, tx.trunkTransaction)
+            }
+            if (k > UNKNOWN) {
+                requestDisseminator.postMessage(k, tx.branchTransaction)
+            }
         } else {
             // Seen tx
             numberOfInboundTransactions++
@@ -164,10 +159,10 @@ export const ICT = function (properties) {
         if (tritsLength === HASH_LENGTH + TRITS_PER_ELEMENT) {
             const trits = new Int8Array(HASH_LENGTH + TRITS_PER_ELEMENT)
             bytesToTrits(packet, 0, packet.byteLength, trits, 0)
-
             const requestedTransaction = subtangle.getTransaction(
                 trytes(trits.slice(TRITS_PER_ELEMENT), 0, HASH_LENGTH)
             )
+
             if (requestedTransaction !== undefined) {
                 send(requestedTransaction.trits, peer)
             }
@@ -224,12 +219,14 @@ export const ICT = function (properties) {
             subtangle.put(transaction(Curl729_27, trits))
 
             disseminator.launch(send)
+            requestDisseminator.launch(request)
             peering.launch(receive)
         },
         ixi: IXI({ subtangle, entangle, request, listeners, Curl729_27 }),
         terminate() {
             peering.terminate()
             disseminator.terminate()
+            requestDisseminator.terminate()
             subtangle.clear()
         },
     }
