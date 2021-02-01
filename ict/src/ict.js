@@ -168,13 +168,7 @@ export const ICT = function (properties) {
             const requestedTransaction = subtangle.getTransaction(
                 trytes(trits.slice(TRITS_PER_ELEMENT), 0, HASH_LENGTH)
             )
-            if (requestedTransaction === undefined) {
-                peers.forEach((peer2) => {
-                    if (peer2 !== peer) {
-                        //peer2.send(packet)
-                    }
-                })
-            } else {
+            if (requestedTransaction !== undefined) {
                 send(requestedTransaction.trits, peer)
             }
         } else if (tritsLength % HASH_LENGTH === 0) {
