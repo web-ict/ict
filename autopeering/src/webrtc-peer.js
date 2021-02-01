@@ -125,7 +125,7 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
                     dc.onmessage = onmessage
                     dc.onclose = onclose
                 }
-            } else if (description) {
+            } else if (description && pc !== undefined) {
                 if (description.type === 'offer') {
                     ;(pc.signalingState !== 'stable'
                         ? Promise.all([
@@ -152,7 +152,7 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
                 return
             }
 
-            if (candidate) {
+            if (candidate && pc !== undefined) {
                 pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.log)
                 return
             }
