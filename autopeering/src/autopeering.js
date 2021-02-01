@@ -121,7 +121,7 @@ export const autopeering = (wrtc) => ({
                     reconnect = setTimeout(() => discover(peer), 1)
                 }
 
-                const specialPeer = webRTC_Peer(onopen, onpacket, skip)
+                const specialPeer = webRTC_Peer(onopen, onpacket, skip, peers, peer)
 
                 const terminate = () => {
                     specialPeer.terminate()
