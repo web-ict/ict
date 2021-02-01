@@ -91,6 +91,7 @@ export const autopeering = (wrtc) => ({
                 }
 
                 Object.assign(peer, {
+                    remoteAddress: '',
                     uptime: 0,
                     numberOfInboundTransactions: 0,
                     numberOfOutboundTransactions: 0,
