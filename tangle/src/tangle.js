@@ -127,12 +127,11 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
     const put = (transaction) => {
         let v = get(transaction.hash)
-        let i = 0
         let j = 0
         let k = 0
 
         if (v === undefined) {
-            v = vertex(transaction.hash, (i = ++index))
+            v = vertex(transaction.hash, ++index)
             verticesByHash.set(transaction.hash, v)
 
             if (transaction.tailFlag === TRUE) {
@@ -141,7 +140,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         }
 
         if (v.transaction !== undefined) {
-            return [FALSE * i] // seen tx
+            return [FALSE * v.index] // seen tx
         }
 
         v.transaction = transaction
@@ -186,7 +185,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
         pruneIfNeccessary()
 
-        return [i, j, k] // New tx
+        return [v.index, j, k] // New tx
     }
 
     const getTransaction = (hash) => {
