@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { NULL_TRANSACTION_HASH_TRYTES, NULL_HASH_TRYTES, NULL_TAG_TRYTES, HASH_LENGTH } from '@web-ict/transaction'
+import { NULL_HASH_TRYTES, NULL_TAG_TRYTES, HASH_LENGTH } from '@web-ict/transaction'
 import { FALSE, TRUE, trytesToTrits } from '@web-ict/converter'
 
 const vertex = (hash, index) => ({
@@ -64,9 +64,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const tips = new Set()
 
     const get = (hash) => verticesByHash.get(hash)
-
-    verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
-    tips.add(get(NULL_TRANSACTION_HASH_TRYTES))
 
     const remove = (hash) => {
         let v = get(hash)
@@ -130,6 +127,8 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
     const put = (transaction) => {
         let v = get(transaction.hash)
+        let j = 0
+        let k = 0
 
         if (v === undefined) {
             v = vertex(transaction.hash, ++index)
@@ -141,14 +140,14 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         }
 
         if (v.transaction !== undefined) {
-            return FALSE * v.index // seen tx
+            return [FALSE * v.index] // seen tx
         }
 
         v.transaction = transaction
 
         v.trunkVertex = get(transaction.trunkTransaction)
         if (v.trunkVertex === undefined) {
-            v.trunkVertex = vertex(transaction.trunkTransaction, ++index)
+            v.trunkVertex = vertex(transaction.trunkTransaction, (j = ++index))
             verticesByHash.set(transaction.trunkTransaction, v.trunkVertex)
         }
         v.trunkVertex.referrers.add(v)
@@ -159,7 +158,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
         } else {
             v.branchVertex = get(transaction.branchTransaction)
             if (v.branchVertex === undefined) {
-                v.branchVertex = vertex(transaction.branchTransaction, ++index)
+                v.branchVertex = vertex(transaction.branchTransaction, (j = ++index))
                 verticesByHash.set(transaction.branchTransaction, v.branchVertex)
             }
             v.branchVertex.referrers.add(v)
@@ -186,7 +185,7 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
 
         pruneIfNeccessary()
 
-        return TRUE * v.index // New tx
+        return [v.index, j, k] // New tx
     }
 
     const getTransaction = (hash) => {
@@ -231,7 +230,6 @@ export const tangle = ({ capacity, pruningScale, artificialLatency }) => {
     const clear = () => {
         index = 0
         verticesByHash.clear()
-        verticesByHash.set(NULL_TRANSACTION_HASH_TRYTES, vertex(NULL_TRANSACTION_HASH_TRYTES, index++))
         verticesByAddress.clear()
         verticesByTag.clear()
         tips.clear()

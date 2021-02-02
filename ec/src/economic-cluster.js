@@ -58,9 +58,9 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
         let N = 0
         actors.forEach(({ weight }) => (N += weight))
 
-        const f = (hash) => {
-            const vertex = ixi.get(hash)
-
+        const nonAnalyzedVertices = [ixi.get(hash || actor.latestMilestone)]
+        let vertex
+        while ((vertex = nonAnalyzedVertices.shift()) !== undefined) {
             if (vertex) {
                 if (vertex.transaction === undefined) {
                     missingTransactions.set(hash, { confidence, ratedTransactions })
@@ -79,7 +79,7 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
                         if (a < b) {
                             vertex.weights.set(actor, b)
                         } else {
-                            return
+                            continue
                         }
                     }
 
@@ -88,16 +88,14 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
 
                     ratedTransactions.add(vertex.hash)
 
-                    f(vertex.trunkVertex.hash)
+                    nonAnalyzedVertices.push(vertex.trunkVertex)
 
                     if (vertex.branchVertex.hash !== vertex.trunkVertex.hash) {
-                        f(vertex.branchVertex.hash)
+                        nonAnalyzedVertices.push(vertex.branchVertex)
                     }
                 }
             }
         }
-
-        f(hash || actor.latestMilestone)
     }
 
     const transactionListener = (transaction) => {
@@ -108,7 +106,7 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
         }
     }
 
-    const milestoneListener = () => {
+    const updateLatestMilestones = () => {
         actors.forEach((actor) =>
             ixi
                 .getBundlesByAddress(actor.address)
@@ -151,6 +149,7 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
                         ) {
                             actor.latestMilestoneIndex = index
                             actor.latestMilestone = bundle[0].hash
+                            actor.milestones.set(index, bundle[0].hash)
                             updateConfidence(
                                 actor,
                                 integerValue(head.messageOrSignature, CONFIDENCE_OFFSET, CONFIDENCE_LENGTH)
@@ -161,9 +160,55 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
         )
     }
 
+    const updateLatestSolidSubtangleMilestones = () => {
+        actors.forEach((actor) => {
+            for (
+                let milestoneIndex = actor.latestMilestoneIndex;
+                milestoneIndex > actor.latestSolidSubtangleMilestoneIndex;
+                milestoneIndex--
+            ) {
+                const milestone = actor.milestones.get(milestoneIndex)
+                if (milestone !== undefined) {
+                    let solid = true
+
+                    const analyzedTransactions = new Set()
+                    analyzedTransactions.add(
+                        'I99999999999999999999999999999999999999999999999999999999999999999999999999999999'
+                    )
+
+                    const nonAnalyzedTransactions = [milestone]
+                    let hash
+                    while ((hash = nonAnalyzedTransactions.shift()) !== undefined) {
+                        if (!analyzedTransactions.has(hash)) {
+                            analyzedTransactions.add(hash)
+                            const transaction = ixi.getTransaction(hash)
+
+                            if (transaction === undefined) {
+                                solid = false
+                                ixi.request(hash)
+                                break
+                            } else {
+                                nonAnalyzedTransactions.push(transaction.trunkTransaction)
+                                nonAnalyzedTransactions.push(transaction.branchTransaction)
+                            }
+                        }
+                    }
+
+                    if (solid) {
+                        actor.latestSolidSubtangleMilestone = milestone
+                        actor.latestSolidSubtangleMilestoneIndex = milestoneIndex
+                    }
+                }
+            }
+        })
+    }
+
     return {
         launch() {
-            interval = setInterval(milestoneListener, intervalDuration)
+            interval = setInterval(() => {
+                updateLatestMilestones()
+                updateLatestSolidSubtangleMilestones()
+            }, intervalDuration)
             ixi.addListener(transactionListener)
         },
         terminate() {
@@ -172,6 +217,8 @@ export const economicCluster = ({ intervalDuration, ixi, Curl729_27 }) => {
         },
         addEconomicActor(actor) {
             actor.latestMilestoneIndex = -1
+            actor.latestSolidSubtangleMilestoneIndex = -1
+            actor.milestones = new Map()
             actors.add({ ...actor })
         },
         removeEconomicActor(actor) {

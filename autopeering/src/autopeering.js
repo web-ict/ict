@@ -62,12 +62,13 @@ export const autopeering = (wrtc) => ({
     }
 
     let running = false
+    let tiebreaker
 
     return {
         peers,
         launch(receive) {
             running = true
-            const tiebreaker = (() => {
+            tiebreaker = (() => {
                 const numberOfNewTransactions = Array(NUMBER_OF_PEERS).fill(0)
                 return setInterval(() => {
                     peers.forEach((peer, i) => {
@@ -90,6 +91,7 @@ export const autopeering = (wrtc) => ({
                 }
 
                 Object.assign(peer, {
+                    remoteAddress: '',
                     uptime: 0,
                     numberOfInboundTransactions: 0,
                     numberOfOutboundTransactions: 0,
@@ -97,11 +99,11 @@ export const autopeering = (wrtc) => ({
                     rateOfNewTransactions: 0,
                 })
 
-                let heartbeat
                 let alive = false
+                let heartbeat = setInterval(() => (alive ? (alive = false) : peer.skip()), cooldownDuration * 1000)
+
                 const onopen = () => {
                     peer.startTime = Date.now()
-                    heartbeat = setInterval(() => (alive ? (alive = false) : peer.skip()), cooldownDuration * 1000)
                 }
 
                 const onpacket = (packet) => {
@@ -116,19 +118,16 @@ export const autopeering = (wrtc) => ({
 
                 let reconnect
                 const skip = () => {
-                    if (reconnect === undefined) {
-                        peer.terminate()
-                        reconnect = setTimeout(() => discover(peer), 1)
-                    }
+                    peer.terminate()
+                    reconnect = setTimeout(() => discover(peer), 1)
                 }
 
-                const specialPeer = webRTC_Peer(onopen, onpacket, skip)
+                const specialPeer = webRTC_Peer(onopen, onpacket, skip, peers, peer)
 
                 const terminate = () => {
                     specialPeer.terminate()
                     clearTimeout(reconnect)
                     clearInterval(heartbeat)
-                    clearInterval(tiebreaker)
                 }
 
                 Object.assign(peer, specialPeer, {
@@ -141,6 +140,7 @@ export const autopeering = (wrtc) => ({
         },
         terminate() {
             running = false
+            clearInterval(tiebreaker)
             peers.forEach((peer) => peer.terminate())
         },
     }

@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use-strict'
 
-import { trytes, trytesToTrits, integerValue, bigIntegerValue, TRUE, FALSE, TRYTE_WIDTH } from '@web-ict/converter'
+import { trytes, integerValue, bigIntegerValue, TRUE, FALSE, TRYTE_WIDTH } from '@web-ict/converter'
 
 export const HASH_LENGTH = 243
 
@@ -109,11 +109,6 @@ export const TAIL_FLAG_OFFSET = 2
 
 export const NULL_HASH_TRYTES = '9'.repeat(HASH_LENGTH / TRYTE_WIDTH)
 export const NULL_TAG_TRYTES = '9'.repeat(TAG_LENGTH / TRYTE_WIDTH)
-
-export const NULL_TRANSACTION_HASH_TRYTES =
-    'LOOTDIYCRPJG9UCFENYMNXS9QYKSLDQCDGWFIQLEGGJXPYVCNSRAESGALYYGBPAKULJAA9CPFIBLFVTFW'
-export const NULL_TRANSACTION_HASH = new Int8Array(HASH_LENGTH)
-trytesToTrits(NULL_TRANSACTION_HASH_TRYTES, NULL_TRANSACTION_HASH, 0, HASH_LENGTH)
 
 export const transaction = (Curl729_27, trits) => {
     // Branch transaction must be tail
@@ -181,6 +176,6 @@ export const transaction = (Curl729_27, trits) => {
         attachmentTimestampLowerBound,
         attachmentTimestampUpperBound,
         nonce: trits.slice(BUNDLE_NONCE_OFFSET, BUNDLE_NONCE_END),
-        dump: (target, offset) => target.set(trits, offset),
+        trits,
     }
 }

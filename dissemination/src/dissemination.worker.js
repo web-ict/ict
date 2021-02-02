@@ -58,7 +58,7 @@ onmessage = (event) => {
         queue = delayQueue(A, B)
     } else {
         const i = parseInt(data[0])
-        if (i > UNKNOWN /* new tx */) {
+        if (i > UNKNOWN /* schedule */) {
             indexedTimers.set(
                 i,
                 queue.schedule(() => {
@@ -66,7 +66,7 @@ onmessage = (event) => {
                     indexedTimers.delete(i)
                 })
             )
-        } /* seen tx */ else {
+        } /* cancel */ else {
             const abs = Math.abs(i)
             queue.cancel(indexedTimers.get(abs))
             indexedTimers.delete(abs)

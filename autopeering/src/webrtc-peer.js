@@ -50,7 +50,7 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
     const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc
     const signalingChannel = signalingClient({ signalingServers })
 
-    return (onopen, onpacket, skip) => {
+    return (onopen, onpacket, skip, peers, peer) => {
         let sc
         let pc
         let dc
@@ -60,7 +60,23 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
         const onclose = () => skip()
 
         sc = signalingChannel((signal) => {
-            const { caller, description, candidate } = signal
+            const { remoteAddress, caller, description, candidate } = signal
+
+            if (remoteAddress !== undefined) {
+                let skipped = false
+                peer.remoteAddress = remoteAddress
+
+                peers.forEach((peer2) => {
+                    if (peer2 !== peer && peer2.remoteAddress === remoteAddress) {
+                        skip()
+                        skipped = true
+                    }
+                })
+
+                if (skipped) {
+                    return
+                }
+            }
 
             if (caller !== undefined) {
                 pc = new RTCPeerConnection({ iceServers })
@@ -109,7 +125,7 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
                     dc.onmessage = onmessage
                     dc.onclose = onclose
                 }
-            } else if (description) {
+            } else if (description && pc !== undefined) {
                 if (description.type === 'offer') {
                     ;(pc.signalingState !== 'stable'
                         ? Promise.all([
@@ -136,7 +152,7 @@ export const WebRTC_Peer = (wrtc, { iceServers, signalingServers }) => {
                 return
             }
 
-            if (candidate) {
+            if (candidate && pc !== undefined) {
                 pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.log)
                 return
             }

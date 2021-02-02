@@ -62,6 +62,8 @@ export const signalingClient = ({ signalingServers }) => {
             })(urls)
         )
 
+        ws.onerror = () => {}
+
         const onmessage = (event) => {
             let signal
             try {

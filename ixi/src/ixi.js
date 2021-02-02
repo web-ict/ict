@@ -48,7 +48,7 @@ import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET, TRUNK_TRANSACTION_
 import { updateTransactionNonce } from '@web-ict/bundle'
 import { TRUE, FALSE, trytes } from '@web-ict/converter'
 
-export const IXI = ({ subtangle, entangle, listeners, Curl729_27 }) => {
+export const IXI = ({ subtangle, entangle, request, listeners, Curl729_27 }) => {
     const collectBundle = (transaction, bundle = []) => {
         if (bundle.length === 0 && transaction.tailFlag !== TRUE) {
             throw new Error('Expected tail transaction.')
@@ -112,5 +112,6 @@ export const IXI = ({ subtangle, entangle, listeners, Curl729_27 }) => {
         },
         bestReferrerHash: subtangle.bestReferrerHash,
         entangle,
+        request,
     }
 }

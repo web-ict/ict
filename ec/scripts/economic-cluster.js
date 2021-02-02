@@ -78,7 +78,7 @@ const ict = ICT({
 })
 
 const cluster = economicCluster({
-    intervalDuration: 2 * 1000,
+    intervalDuration: 5 * 1000,
     ixi: ict.ixi,
     Curl729_27,
 })
@@ -103,6 +103,8 @@ setInterval(() => {
 
 setInterval(() => {
     const info = ict.info()
+    const clusterInfo = cluster.info()
+
     info.peers.forEach((peer, i) => {
         process.stdout.write(
             `Peer #${i + 1} - Inbound: ${peer.numberOfInboundTransactions}, Outbound: ${
@@ -112,16 +114,14 @@ setInterval(() => {
             }\n`
         )
     })
+
     process.stdout.write(
         `Subtangle size: ${info.subtangle.size}, Tips: ${info.subtangle.numberOfTips}, Inbound: ${info.numberOfInboundTransactions}, Outbound: ${info.numberOfOutboundTransactions}, New: ${info.numberOfNewTransactions}, Seen: ${info.numberOfSeenTransactions}, Invalid: ${info.numberOfInvalidTransactions}, Enqueued: ${info.numberOfTransactionsToPropagate}\n`
     )
-}, 3000)
 
-setInterval(() => {
-    const info = cluster.info()
-    info.forEach((actor) => {
+    clusterInfo.forEach((actor) => {
         process.stdout.write(
-            `latestMilestone: ${actor.latestMilestone}, latestMilestoneIndex: ${actor.latestMilestoneIndex}\n`
+            `latestMilestoneIndex: ${actor.latestMilestoneIndex}, latestSolidSubtangleMilestoneIndex: ${actor.latestSolidSubtangleMilestoneIndex} \n`
         )
     })
-}, 20 * 1000)
+}, 3000)

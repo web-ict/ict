@@ -140,13 +140,16 @@ export const signalingServer = ({ host, port, minDelay, maxDelay, heartbeatDelay
         socket.on('message', onMessage)
         socket.on('close', onSocketClose)
         match(socket)
-        socket.peer.then(() =>
-            socket.send(
-                JSON.stringify({
-                    caller: socket.caller,
-                })
-            )
-        )
+        socket.peer.then((peerSocket) => {
+            if (peerSocket) {
+                socket.send(
+                    JSON.stringify({
+                        remoteAddress: peerSocket.remoteAddress,
+                        caller: socket.caller,
+                    })
+                )
+            }
+        })
     }
 
     const onClose = () => clearInterval(heartbeatInterval)

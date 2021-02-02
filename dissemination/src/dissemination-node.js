@@ -58,7 +58,7 @@ export const dissemination = function ({ A, B }) {
         },
         terminate() {},
         postMessage(i, m) {
-            if (i > UNKNOWN /* new tx */) {
+            if (i > UNKNOWN /* schedule */) {
                 indexedTimers.set(
                     i,
                     queue.schedule(() => {
@@ -66,7 +66,7 @@ export const dissemination = function ({ A, B }) {
                         indexedTimers.delete(i)
                     })
                 )
-            } /* seen tx */ else {
+            } /* cancel */ else {
                 const abs = Math.abs(i)
                 queue.cancel(indexedTimers.get(abs))
                 indexedTimers.delete(abs)
