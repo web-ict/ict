@@ -304,6 +304,10 @@ export const HUB = ({
         return balance
     }
 
+    const getTransfers = () => {
+        return transfers
+    }
+
     const reattach = (transfer) => {
         const attachment = transfer.transactions.map((transactions) => ixi.attachToTangle(transactions))[
             transfer.transactions.length - 1
@@ -356,6 +360,7 @@ export const HUB = ({
         getWithdrawalValue,
         withdraw,
         getBalance,
+        getTransfers,
     }
 }
 
