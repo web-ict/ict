@@ -204,9 +204,24 @@ export const HUB = ({
         return trytes(output.address, 0, ADDRESS_LENGTH)
     }
 
+    const getWithdrawalValue = (address) => {
+        const bundleTransactions = ixi
+            .getBundlesByAddress(address)
+            .filter(
+                (transactions) =>
+                    transactions[0].value.greater(bigInt.zero) &&
+                    transactions[1].value.multiply(-1).equals(transactions[0].value)
+            )
+            .filter((transactions) => validateBundle(transactions))[0]
+
+        if (bundleTransactions.length > 0) {
+            return bundleTransactions[0].value
+        }
+    }
+
     const withdraw = async ({ address, value }) => {
-        const bundles = ixi.getBundlesByAddress(address)
-        const bundleTransactions = bundles
+        const bundleTransactions = ixi
+            .getBundlesByAddress(address)
             .filter(
                 (transactions) =>
                     transactions[0].value.greater(bigInt.zero) &&
@@ -338,6 +353,7 @@ export const HUB = ({
         launch,
         terminate,
         deposit,
+        getWithdrawalValue,
         withdraw,
         getBalance,
     }
