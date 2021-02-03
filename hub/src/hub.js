@@ -214,7 +214,7 @@ export const HUB = ({
             )
             .filter((transactions) => validateBundle(transactions))[0]
 
-        if (bundleTransactions.length > 0) {
+        if (bundleTransactions !== undefined) {
             return bundleTransactions[0].value
         }
     }
