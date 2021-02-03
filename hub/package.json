@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/transfer",
-    "version": "0.0.0-beta.10",
+    "version": "0.0.0-beta.11",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -20,17 +20,17 @@
     },
     "devDependencies": {
         "@web-ict/curl": "^0.0.0-beta.7",
-        "@web-ict/ict": "^0.0.0-beta.10",
+        "@web-ict/ict": "^0.0.0-beta.11",
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
         "prettier": "^2.0.2"
     },
     "dependencies": {
-        "@web-ict/bundle": "^0.0.0-beta.10",
+        "@web-ict/bundle": "^0.0.0-beta.11",
         "@web-ict/converter": "^0.0.0-beta.10",
-        "@web-ict/iss": "^0.0.0-beta.10",
+        "@web-ict/iss": "^0.0.0-beta.11",
         "@web-ict/persistence": "^0.0.0-beta.10",
-        "@web-ict/transaction": "^0.0.0-beta.10",
+        "@web-ict/transaction": "^0.0.0-beta.11",
         "big-integer": "^1.6.48"
     },
     "gitHead": "fb0ca9ac90afd83543132bdeeb1382e1aac3fbe6"

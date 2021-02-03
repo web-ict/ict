@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/bundle",
-    "version": "0.0.0-beta.10",
+    "version": "0.0.0-beta.11",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -20,8 +20,8 @@
     },
     "dependencies": {
         "@web-ict/converter": "^0.0.0-beta.10",
-        "@web-ict/iss": "^0.0.0-beta.10",
-        "@web-ict/transaction": "^0.0.0-beta.10"
+        "@web-ict/iss": "^0.0.0-beta.11",
+        "@web-ict/transaction": "^0.0.0-beta.11"
     },
     "devDependencies": {
         "eslint": "^6.8.0",

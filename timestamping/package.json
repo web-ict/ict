@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/timestamping",
-    "version": "0.0.0-beta.10",
+    "version": "0.0.0-beta.11",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -26,7 +26,7 @@
     "dependencies": {
         "@web-ict/converter": "^0.0.0-beta.10",
         "@web-ict/curl": "^0.0.0-beta.7",
-        "@web-ict/transaction": "^0.0.0-beta.10"
+        "@web-ict/transaction": "^0.0.0-beta.11"
     },
     "gitHead": "fb0ca9ac90afd83543132bdeeb1382e1aac3fbe6"
 }
