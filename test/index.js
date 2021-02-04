@@ -92,7 +92,18 @@ import('@web-ict/curl').then(({ Curl729_27 }) => {
     ict.launch()
     cluster.launch()
 
-    setInterval(routine(ict.ixi, Curl729_27), 100)
+    let spamming = false
+    let interval
+
+    document.getElementById('spam').addEventListener('click', () => {
+        if (!spamming) {
+            interval = setInterval(routine(ict.ixi, Curl729_27), 1000)
+            spamming = true
+        } else {
+            clearInterval(interval)
+            spamming = false
+        }
+    })
 
     const step = () => {
         const info = ict.info()
