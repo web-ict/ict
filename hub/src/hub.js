@@ -162,7 +162,9 @@ export const HUB = ({
             trits: bundle.trits.map((transaction) => Array.from(transaction)),
             types: bundle.types,
         }))
-        transferCopy.input = serializeInput(transfer.input)
+        if (transfer.input !== undefined) {
+            transferCopy.input = serializeInput(transfer.input)
+        }
         return transferCopy
     }
 
@@ -172,7 +174,9 @@ export const HUB = ({
             trits: bundle.trits.map((transaction) => Int8Array.from(transaction)),
             types: bundle.types,
         }))
-        transfer.input = deserializeInput(transfer.input)
+        if (transfer.input !== undefined) {
+            transfer.input = deserializeInput(transfer.input)
+        }
         return transfer
     }
 
@@ -334,21 +338,23 @@ export const HUB = ({
             .on('data', (data) => transfers.add(deserializeTransfer(data.value)))
             .on('end', () => {
                 transfers.forEach((transfer) => {
-                    sweep(transfer)
+                    if (transfer.input !== undefined) {
+                        sweep(transfer)
+                    }
                 })
             })
 
         createReadStream({ gte: 'input', lte: 'input~' }).on('data', (data) => inputs.add(deserializeInput(data.value)))
 
         interval = setInterval(() => {
-            transfers.forEach((transfer) => {
+            transfers.forEach(async (transfer) => {
                 let accepted = false
-                transfer.attachments.forEach(async (hash) => {
-                    const transaction = ixi.getTransaction(hash)
+
+                for (let i = 0; i < transfer.attachments.length; i++) {
+                    const transaction = ixi.getTransaction(transfer.attachments[i])
 
                     if (transaction !== undefined && transaction.confidence >= acceptanceThreshold) {
                         const input = transfer.input
-                        input.balance = transfer.value
 
                         accepted = true
 
@@ -360,8 +366,9 @@ export const HUB = ({
 
                         transfers.delete(transfer)
                         inputs.add(input)
+                        break
                     }
-                })
+                }
 
                 if (!accepted) {
                     reattach(transfer)
