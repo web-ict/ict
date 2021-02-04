@@ -344,7 +344,9 @@ export const HUB = ({
                 })
             })
 
-        createReadStream({ gte: 'input', lte: 'input~' }).on('data', (data) => inputs.add(deserializeInput(data.value)))
+        createReadStream({ gte: 'input', lte: 'input~' }).on('data', (data) =>
+            inputs.add(deserializeInput(JSON.parse(data.value)))
+        )
 
         interval = setInterval(() => {
             transfers.forEach(async (transfer) => {
@@ -360,9 +362,11 @@ export const HUB = ({
 
                         await batch()
                             .del('transfer:'.concat(transfer.bundle))
-                            .put('input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)), serializeInput(input), {
-                                valueEncoding: 'json',
-                            })
+                            .put(
+                                'input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)),
+                                JSON.stringify(serializeInput(input))
+                            )
+                            .write()
 
                         transfers.delete(transfer)
                         inputs.add(input)
