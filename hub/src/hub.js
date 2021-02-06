@@ -84,7 +84,7 @@ export const HUB = ({
             )
         })
 
-        inputs.forEach(({ address, security, balance }) => {
+        inputs.forEach(({ address, balance }) => {
             for (let i = 0; i < security; i++) {
                 transactions.push(
                     transactionTrits({
@@ -146,10 +146,11 @@ export const HUB = ({
         inputCopy.address = Array.from(input.address)
         inputCopy.digests = Array.from(input.digests)
         inputCopy.balance = input.balance.toString()
-        return inputCopy
+        return JSON.stringify(inputCopy)
     }
 
     const deserializeInput = (input) => {
+        input = JSON.parse(input)
         input.address = Int8Array.from(input.address)
         input.digests = Int8Array.from(input.digests)
         input.balance = bigInt(input.balance)
@@ -165,7 +166,7 @@ export const HUB = ({
         if (transfer.input !== undefined) {
             transferCopy.input = serializeInput(transfer.input)
         }
-        return transferCopy
+        return JSON.stringify(transferCopy)
     }
 
     const deserializeTransfer = (transfer) => {
@@ -180,39 +181,35 @@ export const HUB = ({
         return transfer
     }
 
-    const deposit = async ({ value }) => {
-        const input = await iss.address(seed, security)
-        const output = await iss.address(seed, security)
+    const deposit = async ({ value }) =>
+        Promise.all([iss.address(seed, security), iss.address(seed, security)]).then(([input, output]) => {
+            value = bigInt(value)
+            input.balance = value
+            output.balance = value
 
-        value = bigInt(value)
-        input.balance = value
-        output.balance = value
+            return prepareTransfers({
+                transfers: [
+                    {
+                        address: output.address,
+                        value,
+                    },
+                ],
+                inputs: [input],
+            }).then(({ bundle, transactions }) => {
+                const transfer = {
+                    bundle,
+                    transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
+                    input: output,
+                }
 
-        const { bundle, transactions } = await prepareTransfers({
-            transfers: [
-                {
-                    address: output.address,
-                    value,
-                },
-            ],
-            inputs: [input],
+                return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
+                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfers.add(transfer)
+
+                    return trytes(output.address, 0, ADDRESS_LENGTH)
+                })
+            })
         })
-
-        const transfer = {
-            bundle,
-            transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
-            input: output,
-        }
-
-        await put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
-
-        transfer.attachments = [ixi.attachToTangle(transactions)]
-        await put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
-
-        transfers.add(transfer)
-
-        return trytes(output.address, 0, ADDRESS_LENGTH)
-    }
 
     const getWithdrawalValue = (address) => {
         const bundleTransactions = ixi
@@ -263,7 +260,7 @@ export const HUB = ({
                 throw new Error('Insufficient balance.')
             }
 
-            const { bundle, transactions, remainder } = await prepareTransfers({
+            return prepareTransfers({
                 transfers: [
                     {
                         address: bundleTransactions[1].address,
@@ -271,44 +268,58 @@ export const HUB = ({
                     },
                 ],
                 inputs: buffer,
+            }).then(({ bundle, transactions, remainder }) => {
+                const transfer = {
+                    bundle,
+                    transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
+                    input: remainder,
+                }
+
+                return batch([
+                    ...buffer.map((input) => ({
+                        type: 'del',
+                        key: 'input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)),
+                    })),
+                    {
+                        type: 'put',
+                        key: 'transfer:'.concat(bundle),
+                        value: serializeTransfer(transfer),
+                    },
+                ])
+                    .then(() => {
+                        transfer.attachments = [ixi.attachToTangle(transactions)]
+                        transfers.add(transfer)
+
+                        return transfer.attachments[0]
+                    })
+                    .catch((error) => {
+                        buffer.forEach((input) => inputs.add(input))
+                        throw error
+                    })
             })
-
-            const transfer = {
-                bundle,
-                transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
-                input: remainder,
-            }
-
-            put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
-
-            transfer.attachments = [ixi.attachToTangle(transactions)]
-            put('transfer:'.concat(bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
-
-            transfers.add(transfer)
-
-            return transfer.attachments[0]
         }
     }
 
     const sweep = async (transfer) => {
-        const output = await iss.address(seed, security)
-        const { transactions } = await prepareTransfers({
-            transfers: [
-                {
-                    address: output.address,
-                    value: transfer.input.balance,
-                },
-            ],
-            inputs: [transfer.input],
-        })
-        transfer.transactions.push({ trits: transactions, types: transactions.map((trits) => trits.type) })
-        output.balance = transfer.input.balance
-        transfer.input = output
+        iss.address(seed, security).then((output) =>
+            prepareTransfers({
+                transfers: [
+                    {
+                        address: output.address,
+                        value: transfer.input.balance,
+                    },
+                ],
+                inputs: [transfer.input],
+            }).then(({ transactions }) => {
+                transfer.transactions.push({ trits: transactions, types: transactions.map((trits) => trits.type) })
+                output.balance = transfer.input.balance
+                transfer.input = output
 
-        put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
-
-        transfer.attachments = [ixi.attachToTangle(transactions)]
-        put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer), { valueEncoding: 'json' })
+                return put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer)).then(() => {
+                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                })
+            })
+        )
     }
 
     const getBalance = () => {
@@ -321,36 +332,38 @@ export const HUB = ({
         return transfers
     }
 
-    const reattach = (transfer) => {
-        const attachment = transfer.transactions.map((transactions) =>
-            ixi.attachToTangle(
-                transactions.trits.map((trits, i) => {
-                    trits.type = transactions.types[i]
-                    return trits
-                })
-            )
-        )[transfer.transactions.length - 1]
-        transfer.attachments.push(attachment)
-    }
+    const reattach = (transfer) =>
+        transfer.attachments.push(
+            transfer.transactions.map((transactions) =>
+                ixi.attachToTangle(
+                    transactions.trits.map((trits, i) => {
+                        trits.type = transactions.types[i]
+                        return trits
+                    })
+                )
+            )[transfer.transactions.length - 1]
+        )
 
     const launch = () => {
         createReadStream({ gte: 'transfer', lte: 'transfer~' })
             .on('data', (data) => transfers.add(deserializeTransfer(data.value)))
-            .on('end', () => {
+            .on('end', () =>
                 transfers.forEach((transfer) => {
                     if (transfer.input !== undefined) {
                         sweep(transfer)
                     }
                 })
-            })
+            )
 
-        createReadStream({ gte: 'input', lte: 'input~' }).on('data', (data) =>
-            inputs.add(deserializeInput(JSON.parse(data.value)))
-        )
+        createReadStream({ gte: 'input', lte: 'input~' }).on('data', (data) => inputs.add(deserializeInput(data.value)))
 
         interval = setInterval(() => {
             transfers.forEach(async (transfer) => {
                 let accepted = false
+
+                if (transfer.attachments === undefined) {
+                    transfer.attachments = []
+                }
 
                 for (let i = 0; i < transfer.attachments.length; i++) {
                     const transaction = ixi.getTransaction(transfer.attachments[i])
@@ -362,10 +375,7 @@ export const HUB = ({
 
                         await batch()
                             .del('transfer:'.concat(transfer.bundle))
-                            .put(
-                                'input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)),
-                                JSON.stringify(serializeInput(input))
-                            )
+                            .put('input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)), serializeInput(input))
                             .write()
 
                         transfers.delete(transfer)
