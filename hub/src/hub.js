@@ -268,35 +268,47 @@ export const HUB = ({
                     },
                 ],
                 inputs: buffer,
-            }).then(({ bundle, transactions, remainder }) => {
-                const transfer = {
-                    bundle,
-                    transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
-                    input: remainder,
-                }
+            })
+                .catch((error) => {
+                    buffer.forEach((input) => inputs.add(input))
+                    throw error
+                })
+                .then(({ bundle, transactions, remainder }) => {
+                    const transfer = {
+                        bundle,
+                        transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
+                    }
 
-                return batch([
-                    ...buffer.map((input) => ({
-                        type: 'del',
-                        key: 'input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)),
-                    })),
-                    {
-                        type: 'put',
-                        key: 'transfer:'.concat(bundle),
-                        value: serializeTransfer(transfer),
-                    },
-                ])
-                    .then(() => {
+                    const ops = [
+                        ...buffer.map((input) => ({
+                            type: 'del',
+                            key: 'input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)),
+                        })),
+                        {
+                            type: 'put',
+                            key: 'transfer:'.concat(bundle),
+                            value: serializeTransfer(transfer),
+                        },
+                    ]
+
+                    if (remainder) {
+                        ops.push({
+                            type: 'put',
+                            key: 'input:'.concat(trytes(remainder.address, 0, ADDRESS_LENGTH)),
+                            value: serializeInput(remainder),
+                        })
+                    }
+
+                    return batch(ops).then(() => {
                         transfer.attachments = [ixi.attachToTangle(transactions)]
                         transfers.add(transfer)
+                        if (remainder) {
+                            inputs.add(remainder)
+                        }
 
                         return transfer.attachments[0]
                     })
-                    .catch((error) => {
-                        buffer.forEach((input) => inputs.add(input))
-                        throw error
-                    })
-            })
+                })
         }
     }
 
@@ -369,17 +381,30 @@ export const HUB = ({
                     const transaction = ixi.getTransaction(transfer.attachments[i])
 
                     if (transaction !== undefined && transaction.confidence >= acceptanceThreshold) {
-                        const input = transfer.input
-
                         accepted = true
 
-                        await batch()
-                            .del('transfer:'.concat(transfer.bundle))
-                            .put('input:'.concat(trytes(input.address, 0, ADDRESS_LENGTH)), serializeInput(input))
-                            .write()
+                        const ops = [
+                            {
+                                type: 'del',
+                                key: 'transfer:'.concat(transfer.bundle),
+                            },
+                        ]
+
+                        if (transfer.input) {
+                            ops.push({
+                                type: 'put',
+                                key: 'input:'.concat(trytes(transfer.input.address, 0, ADDRESS_LENGTH)),
+                                value: serializeInput(transfer.input),
+                            })
+                        }
+
+                        await batch(ops)
 
                         transfers.delete(transfer)
-                        inputs.add(input)
+                        if (transfer.input) {
+                            inputs.add(transfer.input)
+                        }
+
                         break
                     }
                 }
