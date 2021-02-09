@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/hub",
-    "version": "0.0.0-beta.20",
+    "version": "0.0.0-beta.21",
     "description": "",
     "publishConfig": {
         "access": "public"
