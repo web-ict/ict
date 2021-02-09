@@ -48,9 +48,21 @@ import bigInt from 'big-integer'
 import { ISS } from '@web-ict/iss'
 import { persistence } from '@web-ict/persistence'
 import { transactionTrits, updateBundleNonce, validateBundle } from '@web-ict/bundle'
-import { ADDRESS_LENGTH, HASH_LENGTH, MESSAGE_OR_SIGNATURE_OFFSET } from '@web-ict/transaction'
+import {
+    ADDRESS_LENGTH,
+    HASH_LENGTH,
+    MESSAGE_OR_SIGNATURE_OFFSET,
+    ADDRESS_OFFSET,
+    VALUE_OFFSET,
+    VALUE_LENGTH,
+    ISSUANCE_TIMESTAMP_OFFSET,
+    ISSUANCE_TIMESTAMP_LENGTH,
+    TAG_OFFSET,
+    TAG_LENGTH,
+    transaction,
+} from '@web-ict/transaction'
 import { BUNDLE_FRAGMENT_TRYTE_LENGTH, KEY_SIGNATURE_FRAGMENT_LENGTH } from '@web-ict/iss'
-import { TRUE, trytes, UNKNOWN } from '@web-ict/converter'
+import { TRUE, trytes, trytesToTrits, integerValue, bigIntegerValue, UNKNOWN } from '@web-ict/converter'
 
 export const HUB = ({
     seed,
@@ -204,6 +216,7 @@ export const HUB = ({
 
                 return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
                     transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                     transfers.add(transfer)
 
                     return trytes(output.address, 0, ADDRESS_LENGTH)
@@ -260,10 +273,13 @@ export const HUB = ({
                 throw new Error('Insufficient balance.')
             }
 
+            const addressTrits = new Int8Array(ADDRESS_LENGTH)
+            trytesToTrits(bundleTransactions[1].address, addressTrits, 0, ADDRESS_LENGTH)
+
             return prepareTransfers({
                 transfers: [
                     {
-                        address: bundleTransactions[1].address,
+                        address: addressTrits,
                         value: bundleTransactions[0].value,
                     },
                 ],
@@ -301,6 +317,7 @@ export const HUB = ({
 
                     return batch(ops).then(() => {
                         transfer.attachments = [ixi.attachToTangle(transactions)]
+                        transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                         transfers.add(transfer)
                         if (remainder) {
                             inputs.add(remainder)
@@ -361,6 +378,12 @@ export const HUB = ({
             .on('data', (data) => transfers.add(deserializeTransfer(data.value)))
             .on('end', () =>
                 transfers.forEach((transfer) => {
+                    transfer.transactionObjects = transfer.transactions[0].trits.map((trits) => ({
+                        address: trytes(trits, ADDRESS_OFFSET, ADDRESS_LENGTH),
+                        value: bigIntegerValue(trits, VALUE_OFFSET, VALUE_LENGTH),
+                        issuanceTimestamp: integerValue(trits, ISSUANCE_TIMESTAMP_OFFSET, ISSUANCE_TIMESTAMP_LENGTH),
+                        tag: trytes(trits, TAG_OFFSET, TAG_LENGTH),
+                    }))
                     if (transfer.input !== undefined) {
                         sweep(transfer)
                     }
