@@ -70,6 +70,7 @@ export const HUB = ({
     persistencePath,
     persistenceId,
     reattachIntervalDuration,
+    attachmentTimestampDelta,
     acceptanceThreshold,
     ixi,
     Curl729_27,
@@ -82,6 +83,7 @@ export const HUB = ({
 
     const prepareTransfers = async ({ transfers, inputs, timelockLowerBound, timelockUpperBound }) => {
         const transactions = []
+        const issuanceTimestamp = Math.floor(Date.now() / 1000)
         let remainder
 
         transfers.forEach(({ address, value }) => {
@@ -90,6 +92,7 @@ export const HUB = ({
                     type: TRUE,
                     address,
                     value,
+                    issuanceTimestamp,
                     timelockLowerBound,
                     timelockUpperBound,
                 })
@@ -103,6 +106,7 @@ export const HUB = ({
                         type: UNKNOWN,
                         address,
                         value: i == 0 ? balance.multiply(-1) : bigInt.zero,
+                        issuanceTimestamp,
                         timelockLowerBound,
                         timelockUpperBound,
                     })
@@ -122,6 +126,7 @@ export const HUB = ({
                     type: TRUE,
                     address: remainder.address,
                     value: remainderValue,
+                    issuanceTimestamp,
                     timelockLowerBound,
                     timelockUpperBound,
                 })
@@ -215,7 +220,7 @@ export const HUB = ({
                 }
 
                 return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                     transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                     transfers.add(transfer)
 
@@ -316,7 +321,7 @@ export const HUB = ({
                     }
 
                     return batch(ops).then(() => {
-                        transfer.attachments = [ixi.attachToTangle(transactions)]
+                        transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                         transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                         transfers.add(transfer)
                         if (remainder) {
@@ -345,7 +350,7 @@ export const HUB = ({
                 transfer.input = output
 
                 return put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                 })
             })
         )
@@ -368,7 +373,8 @@ export const HUB = ({
                     transactions.trits.map((trits, i) => {
                         trits.type = transactions.types[i]
                         return trits
-                    })
+                    }),
+                    attachmentTimestampDelta
                 )
             )[transfer.transactions.length - 1]
         )
