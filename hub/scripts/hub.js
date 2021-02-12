@@ -36,6 +36,7 @@ const hub = HUB({
     persistencePath: './',
     persistenceId: 'db',
     reattachIntervalDuration: 3 * 60 * 1000,
+    attachmentTimestampDelta: 1,
     acceptanceThreshold: 100,
     Curl729_27,
     ixi: ict.ixi,

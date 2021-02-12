@@ -70,6 +70,7 @@ export const HUB = ({
     persistencePath,
     persistenceId,
     reattachIntervalDuration,
+    attachmentTimestampDelta,
     acceptanceThreshold,
     ixi,
     Curl729_27,
@@ -219,7 +220,7 @@ export const HUB = ({
                 }
 
                 return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                     transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                     transfers.add(transfer)
 
@@ -320,7 +321,7 @@ export const HUB = ({
                     }
 
                     return batch(ops).then(() => {
-                        transfer.attachments = [ixi.attachToTangle(transactions)]
+                        transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                         transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
                         transfers.add(transfer)
                         if (remainder) {
@@ -349,7 +350,7 @@ export const HUB = ({
                 transfer.input = output
 
                 return put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions)]
+                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
                 })
             })
         )
@@ -372,7 +373,8 @@ export const HUB = ({
                     transactions.trits.map((trits, i) => {
                         trits.type = transactions.types[i]
                         return trits
-                    })
+                    }),
+                    attachmentTimestampDelta
                 )
             )[transfer.transactions.length - 1]
         )

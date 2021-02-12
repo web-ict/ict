@@ -44,9 +44,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET, TRUNK_TRANSACTION_LENGTH } from '@web-ict/transaction'
+import {
+    TRUNK_TRANSACTION_OFFSET,
+    BRANCH_TRANSACTION_OFFSET,
+    TRUNK_TRANSACTION_LENGTH,
+    ATTACHMENT_TIMESTAMP_OFFSET,
+    ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET,
+    ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET,
+} from '@web-ict/transaction'
 import { updateTransactionNonce } from '@web-ict/bundle'
-import { TRUE, FALSE, trytes } from '@web-ict/converter'
+import { TRUE, FALSE, trytes, integerValueToTrits } from '@web-ict/converter'
 
 export const IXI = ({ subtangle, entangle, request, listeners, Curl729_27 }) => {
     const collectBundle = (transaction, bundle = []) => {
@@ -91,13 +98,27 @@ export const IXI = ({ subtangle, entangle, request, listeners, Curl729_27 }) => 
             trits.set(subtangle.bestReferrerHash(), TRUNK_TRANSACTION_OFFSET)
             trits.set(subtangle.bestReferrerHash(), BRANCH_TRANSACTION_OFFSET)
         },
-        attachToTangle: (transactions) => {
+        attachToTangle: (transactions, attachmentTimestampDelta) => {
             const branchTransaction = subtangle.bestReferrerHash()
             let trunkTransaction = subtangle.bestReferrerHash()
 
             for (let i = transactions.length - 1; i >= 0; i--) {
                 transactions[i].set(branchTransaction, BRANCH_TRANSACTION_OFFSET)
                 transactions[i].set(trunkTransaction, TRUNK_TRANSACTION_OFFSET)
+
+                const attachmentTimestamp = Math.floor(Date.now() / 1000)
+                integerValueToTrits(attachmentTimestamp, transactions[i], ATTACHMENT_TIMESTAMP_OFFSET)
+                integerValueToTrits(
+                    attachmentTimestamp - attachmentTimestampDelta,
+                    transactions[i],
+                    ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET
+                )
+                integerValueToTrits(
+                    attachmentTimestamp + attachmentTimestampDelta,
+                    transactions[i],
+                    ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET
+                )
+
                 trunkTransaction = updateTransactionNonce(Curl729_27)(
                     transactions[i],
                     transactions[i].type,
