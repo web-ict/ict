@@ -82,6 +82,7 @@ export const HUB = ({
 
     const prepareTransfers = async ({ transfers, inputs, timelockLowerBound, timelockUpperBound }) => {
         const transactions = []
+        const issuanceTimestamp = Math.floor(Date.now() / 1000)
         let remainder
 
         transfers.forEach(({ address, value }) => {
@@ -90,6 +91,7 @@ export const HUB = ({
                     type: TRUE,
                     address,
                     value,
+                    issuanceTimestamp,
                     timelockLowerBound,
                     timelockUpperBound,
                 })
@@ -103,6 +105,7 @@ export const HUB = ({
                         type: UNKNOWN,
                         address,
                         value: i == 0 ? balance.multiply(-1) : bigInt.zero,
+                        issuanceTimestamp,
                         timelockLowerBound,
                         timelockUpperBound,
                     })
@@ -122,6 +125,7 @@ export const HUB = ({
                     type: TRUE,
                     address: remainder.address,
                     value: remainderValue,
+                    issuanceTimestamp,
                     timelockLowerBound,
                     timelockUpperBound,
                 })
