@@ -72,6 +72,7 @@ export const HUB = ({
     reattachIntervalDuration,
     attachmentTimestampDelta,
     acceptanceThreshold,
+    history,
     ixi,
     Curl729_27,
 }) => {
@@ -180,6 +181,7 @@ export const HUB = ({
             trits: bundle.trits.map((transaction) => Array.from(transaction)),
             types: bundle.types,
         }))
+        transferCopy.value = transfer.value.toString()
         if (transfer.input !== undefined) {
             transferCopy.input = serializeInput(transfer.input)
         }
@@ -192,6 +194,7 @@ export const HUB = ({
             trits: bundle.trits.map((transaction) => Int8Array.from(transaction)),
             types: bundle.types,
         }))
+        transfer.value = bigInt(transfer.value)
         if (transfer.input !== undefined) {
             transfer.input = deserializeInput(transfer.input)
         }
@@ -217,6 +220,9 @@ export const HUB = ({
                     bundle,
                     transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
                     input: output,
+                    value,
+                    inclusionState: false,
+                    type: 'deposit',
                 }
 
                 return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
@@ -298,6 +304,9 @@ export const HUB = ({
                     const transfer = {
                         bundle,
                         transactions: [{ trits: transactions, types: transactions.map((trits) => trits.type) }],
+                        value,
+                        inclusionState: false,
+                        type: 'withdrawal',
                     }
 
                     const ops = [
@@ -390,7 +399,7 @@ export const HUB = ({
                         issuanceTimestamp: integerValue(trits, ISSUANCE_TIMESTAMP_OFFSET, ISSUANCE_TIMESTAMP_LENGTH),
                         tag: trytes(trits, TAG_OFFSET, TAG_LENGTH),
                     }))
-                    if (transfer.input !== undefined) {
+                    if (transfer.input !== undefined && !transfer.inclusionState) {
                         sweep(transfer)
                     }
                 })
@@ -400,7 +409,9 @@ export const HUB = ({
 
         interval = setInterval(() => {
             transfers.forEach(async (transfer) => {
-                let accepted = false
+                if (transfer.inclusionState === true) {
+                    return
+                }
 
                 if (transfer.attachments === undefined) {
                     transfer.attachments = []
@@ -410,13 +421,19 @@ export const HUB = ({
                     const transaction = ixi.getTransaction(transfer.attachments[i])
 
                     if (transaction !== undefined && transaction.confidence >= acceptanceThreshold) {
-                        accepted = true
+                        transfer.inclusionState = true
 
                         const ops = [
-                            {
-                                type: 'del',
-                                key: 'transfer:'.concat(transfer.bundle),
-                            },
+                            history
+                                ? {
+                                      type: 'put',
+                                      key: 'transfer:'.concat(transfer.bundle),
+                                      value: serializeTransfer(transfer),
+                                  }
+                                : {
+                                      type: 'del',
+                                      key: 'transfer:'.concat(transfer.bundle),
+                                  },
                         ]
 
                         if (transfer.input) {
@@ -429,7 +446,10 @@ export const HUB = ({
 
                         await batch(ops)
 
-                        transfers.delete(transfer)
+                        if (!history) {
+                            transfers.delete(transfer)
+                        }
+
                         if (transfer.input) {
                             inputs.add(transfer.input)
                         }
@@ -438,7 +458,7 @@ export const HUB = ({
                     }
                 }
 
-                if (!accepted) {
+                if (!transfer.inclusionState) {
                     reattach(transfer)
                 }
             })
