@@ -283,7 +283,13 @@ export const updateBundleNonce = (Curl729_27) => (transactions, security) => {
         curl.reset(essenceTrits.length)
     } while (true) // eslint-disable-line no-constant-condition
 
-    transactions[0].set(essenceTrits.slice(-BUNDLE_NONCE_LENGTH), BUNDLE_NONCE_OFFSET)
+    transactions[0].set(
+        essenceTrits.slice(
+            BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET,
+            BUNDLE_NONCE_OFFSET - BUNDLE_ESSENCE_OFFSET + BUNDLE_NONCE_LENGTH
+        ),
+        BUNDLE_NONCE_OFFSET
+    )
 
     return bundle
 }
