@@ -85,6 +85,7 @@ export const persistence = ({ path, id }) => {
                 })
         },
         createReadStream: (...args) => db.createReadStream(...args),
+        get: (...args) => db.get(...args),
         put: (...args) => db.put(...args),
         batch: (...args) => db.batch(...args),
     }
