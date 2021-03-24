@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/ict",
-    "version": "0.0.0-beta.24",
+    "version": "0.0.0-beta.25",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -23,12 +23,12 @@
         "@web-ict/autopeering": "^0.0.0-beta.11",
         "@web-ict/converter": "^0.0.0-beta.10",
         "@web-ict/dissemination": "^0.0.0-beta.11",
-        "@web-ict/ixi": "^0.0.0-beta.24",
+        "@web-ict/ixi": "^0.0.0-beta.25",
         "@web-ict/tangle": "^0.0.0-beta.11",
         "@web-ict/transaction": "^0.0.0-beta.11"
     },
     "devDependencies": {
-        "@web-ict/bundle": "^0.0.0-beta.24",
+        "@web-ict/bundle": "^0.0.0-beta.25",
         "@web-ict/curl": "^0.0.0-beta.7",
         "eslint": "^6.8.0",
         "eslint-config-prettier": "^6.10.1",
