@@ -42,9 +42,61 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { attachToTangle } from './src/attach-to-tangle-node.js'
-import * as ixi from './src/ixi.js'
+import { integerValueToTrits, trytes, TRUE, FALSE } from '@web-ict/converter'
+import {
+    BRANCH_TRANSACTION_OFFSET,
+    TRUNK_TRANSACTION_OFFSET,
+    TRUNK_TRANSACTION_LENGTH,
+    ATTACHMENT_TIMESTAMP_OFFSET,
+    ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET,
+    ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET,
+} from '@web-ict/transaction'
+import Worker from './attach-to-tangle.worker.js'
 
-const IXI = ixi.IXI(attachToTangle)
+export const attachToTangle = ({ entangle, subtangle }) => async (transactions, attachmentTimestampDelta) => {
+    const branchTransaction = subtangle.bestReferrerHash()
+    let trunkTransaction = subtangle.bestReferrerHash()
 
-export { IXI }
+    for (let i = transactions.length - 1; i >= 0; i--) {
+        transactions[i].set(branchTransaction, BRANCH_TRANSACTION_OFFSET)
+        transactions[i].set(trunkTransaction, TRUNK_TRANSACTION_OFFSET)
+
+        const attachmentTimestamp = Math.floor(Date.now() / 1000)
+        integerValueToTrits(attachmentTimestamp, transactions[i], ATTACHMENT_TIMESTAMP_OFFSET)
+        integerValueToTrits(
+            attachmentTimestamp - attachmentTimestampDelta,
+            transactions[i],
+            ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET
+        )
+        integerValueToTrits(
+            attachmentTimestamp + attachmentTimestampDelta,
+            transactions[i],
+            ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET
+        )
+
+        const result = await new Promise((resolve) => {
+            const worker = new Worker()
+
+            worker.postMessage(
+                JSON.stringify({
+                    type: transactions[i].type,
+                    transaction: Array.from(transactions[i]),
+                    headFlag: i === transactions.length - 1 ? TRUE : FALSE,
+                    tailFlag: i === 0 ? TRUE : FALSE,
+                })
+            )
+
+            worker.onmessage = ({ data }) => {
+                worker.terminate()
+                resolve(JSON.parse(data))
+            }
+        })
+
+        trunkTransaction = Int8Array.from(result.trunkTransaction)
+        transactions[i] = Int8Array.from(result.transaction)
+
+        entangle(transactions[i])
+    }
+
+    return trytes(trunkTransaction, 0, TRUNK_TRANSACTION_LENGTH)
+}
