@@ -6,6 +6,7 @@
         "access": "public"
     },
     "type": "module",
+    "browser": "browser.js",
     "main": "index.js",
     "scripts": {
         "lint": "eslint ./",
@@ -21,6 +22,7 @@
     "dependencies": {
         "@web-ict/bundle": "^0.0.0-beta.25",
         "@web-ict/converter": "^0.0.0-beta.10",
+        "@web-ict/curl": "^0.0.0-beta.7",
         "@web-ict/transaction": "^0.0.0-beta.11"
     },
     "devDependencies": {
