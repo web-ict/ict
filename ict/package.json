@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/ict",
-    "version": "0.0.0-beta.25",
+    "version": "0.0.0-beta.26",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -23,7 +23,7 @@
         "@web-ict/autopeering": "^0.0.0-beta.11",
         "@web-ict/converter": "^0.0.0-beta.10",
         "@web-ict/dissemination": "^0.0.0-beta.11",
-        "@web-ict/ixi": "^0.0.0-beta.25",
+        "@web-ict/ixi": "^0.0.0-beta.26",
         "@web-ict/tangle": "^0.0.0-beta.11",
         "@web-ict/transaction": "^0.0.0-beta.11"
     },
