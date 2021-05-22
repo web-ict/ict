@@ -8,6 +8,7 @@
     "type": "module",
     "browser": "browser.js",
     "main": "index.js",
+    "react-native": "index.js",
     "scripts": {
         "lint": "eslint ./",
         "format": "prettier --write .",

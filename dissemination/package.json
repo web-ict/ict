@@ -7,6 +7,7 @@
     },
     "browser": "browser.js",
     "main": "index.js",
+    "react-native": "index.js",
     "type": "module",
     "scripts": {
         "lint": "eslint ./",
