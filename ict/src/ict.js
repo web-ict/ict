@@ -44,7 +44,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 'use strict'
 
-import { autopeering } from '@web-ict/autopeering'
+import { autopeering as defaultAutopeering } from '@web-ict/autopeering'
 import { dissemination } from '@web-ict/dissemination'
 import { IXI } from '@web-ict/ixi'
 import { tangle } from '@web-ict/tangle'
@@ -70,9 +70,9 @@ import {
 } from '@web-ict/converter'
 import { updateTransactionNonce } from '@web-ict/bundle'
 
-export const ICT = function (properties) {
+export const ICT = function (properties, autopeering) {
     const { Curl729_27 } = properties
-    const peering = autopeering(properties.autopeering)
+    const peering = (autopeering || defaultAutopeering)(properties.autopeering)
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
     const requestDisseminator = dissemination({

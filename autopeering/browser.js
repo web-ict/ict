@@ -1,2 +1,3 @@
-import { autopeering as Autopeering } from './src/autopeering.js'
-export const autopeering = Autopeering(window)
+import { autopeering as createAutopeering } from './src/autopeering.js'
+export const autopeering = createAutopeering(window)
+export { createAutopeering }
