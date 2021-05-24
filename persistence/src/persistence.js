@@ -45,11 +45,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 'use strict'
 
 import { asyncBuffer } from '@web-ict/async-buffer'
-import level from 'level'
 import { join } from 'path'
 
-export const persistence = ({ path, id }) => {
-    const db = level(join(path, id))
+export const createPersistence = (level) => ({ path, id, store }) => {
+    const db = (level || store)(join(path, id))
     const indexBuffer = asyncBuffer()
 
     const ready = db
