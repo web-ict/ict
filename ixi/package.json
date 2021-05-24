@@ -1,6 +1,6 @@
 {
     "name": "@web-ict/ixi",
-    "version": "0.0.0-beta.27",
+    "version": "0.0.0-beta.28",
     "description": "",
     "publishConfig": {
         "access": "public"
@@ -21,7 +21,7 @@
         "directory": "ixi"
     },
     "dependencies": {
-        "@web-ict/bundle": "^0.0.0-beta.25",
+        "@web-ict/bundle": "^0.0.0-beta.28",
         "@web-ict/converter": "^0.0.0-beta.10",
         "@web-ict/curl": "^0.0.0-beta.7",
         "@web-ict/transaction": "^0.0.0-beta.11"
