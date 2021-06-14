@@ -53,41 +53,40 @@ import {
     ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET,
 } from '@web-ict/transaction'
 
-export const attachToTangle = ({ entangle, subtangle, Curl729_27, updateTransactionNonce }) => async (
-    transactions,
-    attachmentTimestampDelta
-) => {
-    const branchTransaction = subtangle.bestReferrerHash()
-    let trunkTransaction = subtangle.bestReferrerHash()
+export const attachToTangle =
+    ({ entangle, subtangle, Curl729_27, updateTransactionNonce }) =>
+    async (transactions, attachmentTimestampDelta) => {
+        const branchTransaction = subtangle.bestReferrerHash()
+        let trunkTransaction = subtangle.bestReferrerHash()
 
-    for (let i = transactions.length - 1; i >= 0; i--) {
-        transactions[i].set(branchTransaction, BRANCH_TRANSACTION_OFFSET)
-        transactions[i].set(trunkTransaction, TRUNK_TRANSACTION_OFFSET)
+        for (let i = transactions.length - 1; i >= 0; i--) {
+            transactions[i].set(branchTransaction, BRANCH_TRANSACTION_OFFSET)
+            transactions[i].set(trunkTransaction, TRUNK_TRANSACTION_OFFSET)
 
-        const attachmentTimestamp = Math.floor(Date.now() / 1000)
-        integerValueToTrits(attachmentTimestamp, transactions[i], ATTACHMENT_TIMESTAMP_OFFSET)
-        integerValueToTrits(
-            attachmentTimestamp - attachmentTimestampDelta,
-            transactions[i],
-            ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET
-        )
-        integerValueToTrits(
-            attachmentTimestamp + attachmentTimestampDelta,
-            transactions[i],
-            ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET
-        )
+            const attachmentTimestamp = Math.floor(Date.now() / 1000)
+            integerValueToTrits(attachmentTimestamp, transactions[i], ATTACHMENT_TIMESTAMP_OFFSET)
+            integerValueToTrits(
+                attachmentTimestamp - attachmentTimestampDelta,
+                transactions[i],
+                ATTACHMENT_TIMESTAMP_LOWER_BOUND_OFFSET
+            )
+            integerValueToTrits(
+                attachmentTimestamp + attachmentTimestampDelta,
+                transactions[i],
+                ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET
+            )
 
-        trunkTransaction = (updateTransactionNonce
-            ? updateTransactionNonce
-            : defaultUpdateTransactionNonce(Curl729_27))(
-            transactions[i],
-            transactions[i].type,
-            i === transactions.length - 1 ? TRUE : FALSE,
-            i === 0 ? TRUE : FALSE
-        ).slice()
+            trunkTransaction = (
+                await (updateTransactionNonce ? updateTransactionNonce : defaultUpdateTransactionNonce(Curl729_27))(
+                    transactions[i],
+                    transactions[i].type,
+                    i === transactions.length - 1 ? TRUE : FALSE,
+                    i === 0 ? TRUE : FALSE
+                )
+            ).slice()
 
-        entangle(transactions[i])
+            entangle(transactions[i])
+        }
+
+        return trytes(trunkTransaction, 0, TRUNK_TRANSACTION_LENGTH)
     }
-
-    return trytes(trunkTransaction, 0, TRUNK_TRANSACTION_LENGTH)
-}
