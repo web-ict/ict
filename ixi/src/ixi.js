@@ -47,7 +47,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import { TRUNK_TRANSACTION_OFFSET, BRANCH_TRANSACTION_OFFSET } from '@web-ict/transaction'
 import { TRUE } from '@web-ict/converter'
 
-export const IXI = (attachToTangle) => ({ subtangle, entangle, request, listeners, Curl729_27 }) => {
+export const IXI = (attachToTangle) => ({
+    subtangle,
+    entangle,
+    request,
+    listeners,
+    Curl729_27,
+    updateTransactionNonce,
+}) => {
     const collectBundle = (transaction, bundle = []) => {
         if (bundle.length === 0 && transaction.tailFlag !== TRUE) {
             throw new Error('Expected tail transaction.')
@@ -90,7 +97,7 @@ export const IXI = (attachToTangle) => ({ subtangle, entangle, request, listener
             trits.set(subtangle.bestReferrerHash(), TRUNK_TRANSACTION_OFFSET)
             trits.set(subtangle.bestReferrerHash(), BRANCH_TRANSACTION_OFFSET)
         },
-        attachToTangle: attachToTangle({ entangle, subtangle, Curl729_27 }),
+        attachToTangle: attachToTangle({ entangle, subtangle, Curl729_27, updateTransactionNonce }),
         bestReferrerHash: subtangle.bestReferrerHash,
         entangle,
         request,
