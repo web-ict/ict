@@ -42,7 +42,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { updateTransactionNonce } from '@web-ict/bundle'
+import { updateTransactionNonce as defaultUpdateTransactionNonce } from '@web-ict/bundle'
 import { integerValueToTrits, trytes, TRUE, FALSE } from '@web-ict/converter'
 import {
     BRANCH_TRANSACTION_OFFSET,
@@ -53,7 +53,10 @@ import {
     ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET,
 } from '@web-ict/transaction'
 
-export const attachToTangle = ({ entangle, subtangle, Curl729_27 }) => (transactions, attachmentTimestampDelta) => {
+export const attachToTangle = ({ entangle, subtangle, Curl729_27, updateTransactionNonce }) => async (
+    transactions,
+    attachmentTimestampDelta
+) => {
     const branchTransaction = subtangle.bestReferrerHash()
     let trunkTransaction = subtangle.bestReferrerHash()
 
@@ -74,7 +77,9 @@ export const attachToTangle = ({ entangle, subtangle, Curl729_27 }) => (transact
             ATTACHMENT_TIMESTAMP_UPPER_BOUND_OFFSET
         )
 
-        trunkTransaction = updateTransactionNonce(Curl729_27)(
+        trunkTransaction = (updateTransactionNonce
+            ? updateTransactionNonce
+            : defaultUpdateTransactionNonce(Curl729_27))(
             transactions[i],
             transactions[i].type,
             i === transactions.length - 1 ? TRUE : FALSE,

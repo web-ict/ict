@@ -225,13 +225,15 @@ export const HUB = ({
                     type: 'deposit',
                 }
 
-                return put('transfer:'.concat(bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
-                    transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
-                    transfers.add(transfer)
+                return put('transfer:'.concat(bundle), serializeTransfer(transfer))
+                    .then(() => ixi.attachToTangle(transactions, attachmentTimestampDelta))
+                    .then((attachment) => {
+                        transfer.attachments = [attachment]
+                        transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
+                        transfers.add(transfer)
 
-                    return trytes(output.address, 0, ADDRESS_LENGTH)
-                })
+                        return trytes(output.address, 0, ADDRESS_LENGTH)
+                    })
             })
         })
 
@@ -329,16 +331,18 @@ export const HUB = ({
                         })
                     }
 
-                    return batch(ops).then(() => {
-                        transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
-                        transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
-                        transfers.add(transfer)
-                        if (remainder) {
-                            inputs.add(remainder)
-                        }
+                    return batch(ops)
+                        .then(() => ixi.attachToTangle(transactions, attachmentTimestampDelta))
+                        .then((attachment) => {
+                            transfer.attachments = [attachment]
+                            transfer.transactionObjects = transactions.map((trits) => transaction(Curl729_27, trits))
+                            transfers.add(transfer)
+                            if (remainder) {
+                                inputs.add(remainder)
+                            }
 
-                        return transfer.attachments[0]
-                    })
+                            return transfer.attachments[0]
+                        })
                 })
         }
     }
@@ -358,9 +362,11 @@ export const HUB = ({
                 output.balance = transfer.input.balance
                 transfer.input = output
 
-                return put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer)).then(() => {
-                    transfer.attachments = [ixi.attachToTangle(transactions, attachmentTimestampDelta)]
-                })
+                return put('transfer:'.concat(transfer.bundle), serializeTransfer(transfer))
+                    .then(() => ixi.attachToTangle(transactions, attachmentTimestampDelta))
+                    .then((attachment) => {
+                        transfer.attachments = [attachment]
+                    })
             })
         )
     }
@@ -377,14 +383,15 @@ export const HUB = ({
 
     const reattach = (transfer) =>
         transfer.attachments.push(
-            transfer.transactions.map((transactions) =>
-                ixi.attachToTangle(
-                    transactions.trits.map((trits, i) => {
-                        trits.type = transactions.types[i]
-                        return trits
-                    }),
-                    attachmentTimestampDelta
-                )
+            transfer.transactions.map(
+                async (transactions) =>
+                    await ixi.attachToTangle(
+                        transactions.trits.map((trits, i) => {
+                            trits.type = transactions.types[i]
+                            return trits
+                        }),
+                        attachmentTimestampDelta
+                    )
             )[transfer.transactions.length - 1]
         )
 

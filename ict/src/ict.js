@@ -68,10 +68,10 @@ import {
     TRITS_PER_ELEMENT,
     trytesToTrits,
 } from '@web-ict/converter'
-import { updateTransactionNonce } from '@web-ict/bundle'
+import { updateTransactionNonce as defaultUpdateTransactionNonce } from '@web-ict/bundle'
 
 export const ICT = function (properties, autopeering) {
-    const { Curl729_27 } = properties
+    const { Curl729_27, updateTransactionNonce } = properties
     const peering = (autopeering || defaultAutopeering)(properties.autopeering)
     const { peers } = peering
     const disseminator = dissemination(properties.dissemination)
@@ -206,7 +206,7 @@ export const ICT = function (properties, autopeering) {
                 rateOfNewTransactions: peer.rateOfNewTransactions,
             })),
         }),
-        launch() {
+        async launch() {
             numberOfInboundTransactions = 0
             numberOfOutboundTransactions = 0
             numberOfNewTransactions = 0
@@ -215,14 +215,18 @@ export const ICT = function (properties, autopeering) {
             const trits = new Int8Array(TRANSACTION_LENGTH)
             trits[TRUNK_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] = TRUE
             trits[BRANCH_TRANSACTION_OFFSET + TAIL_FLAG_OFFSET] = TRUE
-            updateTransactionNonce(Curl729_27)(trits, FALSE, TRUE, TRUE)
+            if (updateTransactionNonce) {
+                await updateTransactionNonce(trits, FALSE, TRUE, TRUE)
+            } else {
+                defaultUpdateTransactionNonce(Curl729_27)(trits, FALSE, TRUE, TRUE)
+            }
             subtangle.put(transaction(Curl729_27, trits))
 
             disseminator.launch(send)
             requestDisseminator.launch(request)
             peering.launch(receive)
         },
-        ixi: IXI({ subtangle, entangle, request, listeners, Curl729_27 }),
+        ixi: IXI({ subtangle, entangle, request, listeners, Curl729_27, updateTransactionNonce }),
         terminate() {
             peering.terminate()
             disseminator.terminate()
